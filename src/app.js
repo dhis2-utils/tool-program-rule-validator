@@ -32,6 +32,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const tabs = document.querySelectorAll(".tabs");
     M.Tabs.init(tabs);
+    M.Modal.init(document.querySelectorAll(".modal"));
+    document.getElementById("deleteConfirmButton").addEventListener("click", performDeletion);
 
     const validateSelectedButton = document.getElementById("validateSelectedButton");
     const validateAllButton = document.getElementById("validateAllButton");
@@ -40,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const deleteSelectedButton = document.getElementById("deleteSelectedButton");
     deleteSelectedButton.disabled = true;
-    deleteSelectedButton.addEventListener("click", deleteSelectedVariables);
+    deleteSelectedButton.addEventListener("click", openDeleteConfirm);
 
     let currentController = null;
     cancelButton.addEventListener("click", () => currentController?.abort());
@@ -320,32 +322,38 @@ async function validateProgramRules(programIds = null, signal = undefined) {
     }
 }
 
-async function deleteSelectedVariables() {
+let pendingDeletionIds = [];
+
+function openDeleteConfirm() {
+    const checkboxes = document.querySelectorAll("#unusedVariablesTable input[type='checkbox']:checked");
+    pendingDeletionIds = Array.from(checkboxes)
+        .filter(cb => cb.id !== "selectAllCheckbox")
+        .map(cb => cb.value);
+    if (pendingDeletionIds.length === 0) {
+        M.toast({ html: escapeHtml("No variables selected for deletion."), classes: "red" });
+        return;
+    }
+    document.getElementById("deleteConfirmCount").innerText = pendingDeletionIds.length;
+    M.Modal.getInstance(document.getElementById("deleteConfirmModal")).open();
+}
+
+async function performDeletion() {
+    const idsToDelete = pendingDeletionIds;
+    pendingDeletionIds = [];
+    if (idsToDelete.length === 0) return;
+
+    let successCount = 0;
+    let failureCount = 0;
+
     try {
-        const checkboxes = document.querySelectorAll("#unusedVariablesTable input[type='checkbox']:checked");
-        const idsToDelete = Array.from(checkboxes)
-            .filter(cb => cb.id !== "selectAllCheckbox")
-            .map(cb => cb.value);
-        console.log("Ids to delete:", idsToDelete); // Added log for ids to delete
-        if (idsToDelete.length === 0) {
-            M.toast({ html: escapeHtml("No variables selected for deletion."), classes: "red" });
-            return;
-        }
-
-        if (!confirm("Are you sure you want to delete selected variables?")) return;
-
-        let successCount = 0;
-        let failureCount = 0;
-
         for (const id of idsToDelete) {
             try {
                 await d2Delete(`api/programRuleVariables/${id}`);
                 successCount++;
-                // Remove the row from the table
                 const row = document.querySelector(`#unusedVariablesTable input[value='${id}']`).closest("tr");
                 row.remove();
             } catch (error) {
-                console.error("Error deleting variable with id:", id, error); // Added specific error logs
+                console.error("Error deleting variable with id:", id, error);
                 failureCount++;
             }
         }
@@ -357,7 +365,6 @@ async function deleteSelectedVariables() {
             M.toast({ html: `Failed to delete ${escapeHtml(failureCount)} variables.`, classes: "red" });
         }
 
-        // Disable delete button if no checkboxes are selected
         const remainingCheckboxes = document.querySelectorAll("#unusedVariablesTable .variable-checkbox:checked");
         const deleteSelectedButton = document.getElementById("deleteSelectedButton");
         deleteSelectedButton.disabled = remainingCheckboxes.length === 0;
