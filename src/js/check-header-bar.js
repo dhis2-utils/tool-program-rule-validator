@@ -7,9 +7,9 @@ function parseServerVersion(versionString) {
     const [majorStr, minorStr, patchStr = "0"] = cleanedVersion.split(".");
     
     return {
-        major: parseInt(majorStr, 10),
-        minor: parseInt(minorStr, 10),
-        patch: parseInt(patchStr, 10),
+        major: parseInt(majorStr, 10) || 0,
+        minor: parseInt(minorStr, 10) || 0,
+        patch: parseInt(patchStr, 10) || 0,
         snapshot
     };
 }
@@ -18,7 +18,7 @@ async function shouldLoadLegacyHeaderBar() {
     try {
         const response = await d2Get("api/system/info.json?fields=version");
         const versionInfo = parseServerVersion(response.version || "0.0.0");
-        return versionInfo.minor < 42;
+        return versionInfo.major < 2 || (versionInfo.major === 2 && versionInfo.minor < 42);
     } catch (error) {
         console.error("Error fetching server version:", error);
         return true;
