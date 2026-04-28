@@ -35,11 +35,32 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const validateSelectedButton = document.getElementById("validateSelectedButton");
     const validateAllButton = document.getElementById("validateAllButton");
+    const cancelButton = document.getElementById("cancelButton");
     const progressContainer = document.querySelector(".progress-container");
 
     const deleteSelectedButton = document.getElementById("deleteSelectedButton");
     deleteSelectedButton.disabled = true;
     deleteSelectedButton.addEventListener("click", deleteSelectedVariables);
+
+    let currentController = null;
+    cancelButton.addEventListener("click", () => currentController?.abort());
+
+    function startValidation(programIds) {
+        currentController = new AbortController();
+        validateSelectedButton.disabled = true;
+        validateAllButton.disabled = true;
+        deleteSelectedButton.disabled = true;
+        progressContainer.style.display = "block";
+        cancelButton.style.display = "";
+        return validateProgramRules(programIds, currentController.signal)
+            .finally(() => {
+                validateSelectedButton.disabled = false;
+                validateAllButton.disabled = false;
+                progressContainer.style.display = "none";
+                cancelButton.style.display = "none";
+                currentController = null;
+            });
+    }
 
     // Enable/disable delete button based on checkbox selection
     document.getElementById("unusedVariablesTable").addEventListener("change", function () {
@@ -55,27 +76,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     validateSelectedButton.onclick = function () {
         const selectedProgramIds = programChoices.getValue(true);
-        validateSelectedButton.disabled = true;
-        validateAllButton.disabled = true;
-        deleteSelectedButton.disabled = true;
-        progressContainer.style.display = "block";
-        validateProgramRules(selectedProgramIds).finally(() => {
-            validateSelectedButton.disabled = false;
-            validateAllButton.disabled = false;
-            progressContainer.style.display = "none";
-        });
+        startValidation(selectedProgramIds);
     };
 
     validateAllButton.onclick = function () {
-        validateSelectedButton.disabled = true;
-        validateAllButton.disabled = true;
-        deleteSelectedButton.disabled = true;
-        progressContainer.style.display = "block";
-        validateProgramRules().finally(() => {
-            validateSelectedButton.disabled = false;
-            validateAllButton.disabled = false;
-            progressContainer.style.display = "none";
-        });
+        startValidation(null);
     };
 
     unusedVariablesFilter = new Choices("#unusedVariablesFilter", {
@@ -120,7 +125,7 @@ function filterUnusedVariablesTable() {
     }
 }
 
-async function processRule(program, rule, prvs) {
+async function processRule(program, rule, prvs, signal) {
     const programId = program.id;
     const usedVariableNames = new Set();
     const invalidConditionExpressions = [];
@@ -146,11 +151,13 @@ async function processRule(program, rule, prvs) {
             const res = await d2PostPlain(
                 `api/programRules/condition/description?programId=${programId}`,
                 rule.condition,
+                { signal },
             );
             if (!res.ok || res.status === "ERROR") {
                 invalidConditionExpressions.push(res.description || res.message || "Condition validation failed");
             }
-        } catch {
+        } catch (error) {
+            if (error.name === "AbortError") throw error;
             invalidConditionExpressions.push("Condition validation error");
         }
     }
@@ -162,11 +169,13 @@ async function processRule(program, rule, prvs) {
                 const res = await d2PostPlain(
                     `api/programRuleActions/data/expression/description?programId=${programId}`,
                     action.data,
+                    { signal },
                 );
                 if (!res.ok || res.status === "ERROR") {
                     invalidActionExpressions.push(res.description || res.message || "Invalid action expression");
                 }
-            } catch {
+            } catch (error) {
+                if (error.name === "AbortError") throw error;
                 invalidActionExpressions.push("Action expression validation error");
             }
         }
@@ -206,7 +215,7 @@ function appendUnusedVariableRow(tbody, program, variable) {
     row.insertCell(3).innerText = variable.id;
 }
 
-async function validateProgramRules(programIds = null) {
+async function validateProgramRules(programIds = null, signal = undefined) {
     const selectAllCheckbox = document.getElementById("selectAllCheckbox");
     selectAllCheckbox.onclick = function () {
         const rows = document.querySelectorAll("#unusedVariablesTable tbody tr");
@@ -221,7 +230,7 @@ async function validateProgramRules(programIds = null) {
     };
 
     try {
-        const programs = await d2Get("api/programs.json?fields=name,id&paging=false");
+        const programs = await d2Get("api/programs.json?fields=name,id&paging=false", { signal });
 
         const unusedVariablesTable = document.getElementById("unusedVariablesTable").querySelector("tbody");
         const invalidActionExpressionsTable = document.getElementById("invalidActionExpressionsTable").querySelector("tbody");
@@ -253,8 +262,8 @@ async function validateProgramRules(programIds = null) {
         const programData = await Promise.all(selectedPrograms.map(program =>
             programLimit(async () => {
                 const [rulesResp, prvsResp] = await Promise.all([
-                    d2Get(`api/programRules.json?fields=name,id,condition,programRuleActions[data,content,description]&paging=false&filter=program.id:eq:${program.id}`),
-                    d2Get(`api/programRuleVariables.json?fields=name,id,program[id]&paging=false&filter=program.id:eq:${program.id}`),
+                    d2Get(`api/programRules.json?fields=name,id,condition,programRuleActions[data,content,description]&paging=false&filter=program.id:eq:${program.id}`, { signal }),
+                    d2Get(`api/programRuleVariables.json?fields=name,id,program[id]&paging=false&filter=program.id:eq:${program.id}`, { signal }),
                 ]);
                 return {
                     program,
@@ -277,7 +286,7 @@ async function validateProgramRules(programIds = null) {
 
         const ruleResults = await Promise.all(programData.flatMap(({ program, rules, prvs }) =>
             rules.map(rule => ruleLimit(async () => {
-                const result = await processRule(program, rule, prvs);
+                const result = await processRule(program, rule, prvs, signal);
                 updateProgress();
                 return result;
             }))
@@ -306,6 +315,7 @@ async function validateProgramRules(programIds = null) {
 
         progressCombinedBar.style.width = "100%";
     } catch (error) {
+        if (error.name === "AbortError") return;
         console.error("Validation failed", error);
     }
 }
