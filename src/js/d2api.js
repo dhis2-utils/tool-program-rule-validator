@@ -24,13 +24,12 @@ const formatEndpoint = (endpoint) => {
     }
 
     // Ensure the final format is /api/...
-    // Ensure the final format is /api/...
     return `/api/${endpoint}`;
 };
 
 // Helper function to validate endpoint UID (11 characters, alphanumeric)
 const validateUID = (endpoint) => {
-    const uid = endpoint.split("/").pop();
+    const uid = endpoint.split("/").pop().split("?")[0];
     return /^[A-Za-z0-9]{11}$/.test(uid);
 };
 
