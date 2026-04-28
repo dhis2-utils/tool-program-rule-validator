@@ -41,13 +41,14 @@ const handleApiError = async (response) => {
 };
 
 // GET from API async
-export const d2Get = async (endpoint) => {
+export const d2Get = async (endpoint, { signal } = {}) => {
     try {
         endpoint = formatEndpoint(endpoint);
         let headers = getHeaders();
         let response = await fetch(baseUrl + endpoint, {
             method: "GET",
-            headers: headers
+            headers: headers,
+            signal,
         });
         if (!response.ok) {
             await handleApiError(response); // Handle the error response
@@ -55,6 +56,7 @@ export const d2Get = async (endpoint) => {
         let data = await response.json();
         return data;
     } catch (error) {
+        if (error.name === "AbortError") throw error;
         console.log("ERROR in GET:");
         console.log(error);
         throw error;
@@ -62,7 +64,7 @@ export const d2Get = async (endpoint) => {
 };
 
 // POST to API async
-export const d2PostJson = async (endpoint, body) => {
+export const d2PostJson = async (endpoint, body, { signal } = {}) => {
     endpoint = formatEndpoint(endpoint);
     let headers = getHeaders();
     headers.set("Content-Type", "application/json");
@@ -70,7 +72,8 @@ export const d2PostJson = async (endpoint, body) => {
     const response = await fetch(baseUrl + endpoint, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        signal,
     });
 
     let data = {};
@@ -89,7 +92,7 @@ export const d2PostJson = async (endpoint, body) => {
 };
 
 // POST with text/plain to API async
-export const d2PostPlain = async (endpoint, body) => {
+export const d2PostPlain = async (endpoint, body, { signal } = {}) => {
     endpoint = formatEndpoint(endpoint);
     let headers = getHeaders();
     headers.set("Content-Type", "text/plain");
@@ -101,7 +104,8 @@ export const d2PostPlain = async (endpoint, body) => {
         response = await fetch(baseUrl + endpoint, {
             method: "POST",
             headers: headers,
-            body: body
+            body: body,
+            signal,
         });
 
         try {
@@ -117,6 +121,7 @@ export const d2PostPlain = async (endpoint, body) => {
             ...data
         };
     } catch (error) {
+        if (error.name === "AbortError") throw error;
         console.error("ERROR in POST PLAIN:", error);
         return {
             httpStatusCode: 0,
@@ -129,9 +134,8 @@ export const d2PostPlain = async (endpoint, body) => {
 };
 
 
-
 // PUT to API async
-export const d2PutJson = async (endpoint, body) => {
+export const d2PutJson = async (endpoint, body, { signal } = {}) => {
     try {
         endpoint = formatEndpoint(endpoint);
 
@@ -144,7 +148,8 @@ export const d2PutJson = async (endpoint, body) => {
         let response = await fetch(baseUrl + endpoint, {
             method: "PUT",
             headers: headers,
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal,
         });
         if (!response.ok) {
             await handleApiError(response); // Handle the error response
@@ -152,6 +157,7 @@ export const d2PutJson = async (endpoint, body) => {
         let data = await response.json();
         return data;
     } catch (error) {
+        if (error.name === "AbortError") throw error;
         console.log("ERROR in PUT:");
         console.log(error);
         throw error;
@@ -159,7 +165,7 @@ export const d2PutJson = async (endpoint, body) => {
 };
 
 // DELETE from API async
-export const d2Delete = async (endpoint) => {
+export const d2Delete = async (endpoint, { signal } = {}) => {
     try {
         endpoint = formatEndpoint(endpoint);
 
@@ -170,13 +176,15 @@ export const d2Delete = async (endpoint) => {
         let headers = getHeaders();
         let response = await fetch(baseUrl + endpoint, {
             method: "DELETE",
-            headers: headers
+            headers: headers,
+            signal,
         });
         if (!response.ok) {
             await handleApiError(response); // Handle the error response
         }
         return { status: "success" };
     } catch (error) {
+        if (error.name === "AbortError") throw error;
         console.log("ERROR in DELETE:");
         console.log(error);
         throw error;
