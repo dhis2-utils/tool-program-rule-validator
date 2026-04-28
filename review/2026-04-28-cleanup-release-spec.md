@@ -130,7 +130,7 @@ Webpack 5 supports an exported Promise for async config.
 +}
 ```
 
-The same fix applies to the `onProxyRes` handler at `webpack.config.js:149-156`.
+The `onProxyRes` handler at `webpack.config.js:149-156` does **not** need the same fix — `proxyRes.headers["set-cookie"]` is already an array in Node's HTTP API and the existing `.find(...)` call works correctly. Only `fetchSessionCookie` needs the change.
 
 **Tests:** the existing Playwright smoke test must pass without any DHIS2 `corsWhitelist` modification on the test instance. Revert the `corsWhitelist` change made during this review (see "Cleanup of testing artifacts" at the end).
 
@@ -180,7 +180,7 @@ const programDataPromises = selectedPrograms.map(p => programLimit(async () => {
         d2Get(`api/programRules.json?fields=...&filter=program.id:eq:${p.id}`, { signal }),
         d2Get(`api/programRuleVariables.json?fields=...&filter=program.id:eq:${p.id}`, { signal }),
     ]);
-    return { program: p, rules: rulesResp.programRules, prvs: rulesResp.programRuleVariables };
+    return { program: p, rules: rulesResp.programRules, prvs: prvsResp.programRuleVariables };
 }));
 const programData = await Promise.all(programDataPromises);
 totalRules = programData.reduce((n, pd) => n + pd.rules.length, 0);
@@ -271,6 +271,14 @@ In all `catch` clauses, swallow `AbortError` silently (don't log, don't push int
 - `validateProgramRules` catches the `AbortError` from any fetch, stops processing, returns. The `.finally` in `startValidation` hides the cancel button and re-enables Validate.
 - Already-rendered table rows stay (partial results are useful).
 - Progress bar hides via the existing `.finally`.
+- The outer `try/catch` at `app.js:310` (`console.error("Validation failed", error)`) must explicitly check for `AbortError` and return early without logging — otherwise every cancel writes a noisy stack trace to the console:
+  ```js
+  } catch (error) {
+      if (error.name === "AbortError") return;
+      console.error("Validation failed", error);
+  }
+  ```
+- This applies to abort timing in *every* phase: during the initial `d2Get` for programs (under `programLimit` in A3), during program-data fetches, and during rule-evaluation fetches. Any in-flight `fetch` call sharing the controller's signal will reject with `AbortError`, which propagates up through `Promise.all` to the outer catch.
 
 ### A5. Replace `confirm()` with a Materialize modal
 
