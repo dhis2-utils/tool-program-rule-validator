@@ -15,6 +15,9 @@ import { loadLegacyHeaderBarIfNeeded } from "./js/check-header-bar.js";
 
 let unusedVariablesFilter;
 
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
+
 document.addEventListener("DOMContentLoaded", async function () {
     loadLegacyHeaderBarIfNeeded();
     const programs = await d2Get("api/programs.json?fields=name,id&paging=false");
@@ -150,10 +153,12 @@ window.validateProgramRules = async function (programIds = null) {
         }
 
         unusedVariablesFilter.clearStore();
-
-        selectedPrograms.forEach(program => {
-            unusedVariablesFilter.setChoices([{ value: program.id, label: program.name }], "value", "label", false);
-        });
+        unusedVariablesFilter.setChoices(
+            selectedPrograms.map(p => ({ value: p.id, label: p.name })),
+            "value",
+            "label",
+            false,
+        );
 
         const limit = pLimit(10);
 
@@ -209,7 +214,7 @@ window.validateProgramRules = async function (programIds = null) {
                     }
                 }
 
-                for (const action of rule.programRuleActions) {
+                for (const action of (rule.programRuleActions ?? [])) {
                     const cleanContent = stripStringLiterals(action.content || "");
                     const cleanData = stripStringLiterals(action.data || "");
 
@@ -263,6 +268,7 @@ window.validateProgramRules = async function (programIds = null) {
                     row.insertCell(3).innerText = msg;
                     const cell = row.insertCell(4);
                     const btn = document.createElement("button");
+                    btn.className = "btn btn-small";
                     btn.innerText = "Maintenance";
                     btn.onclick = () => window.open(ruleLink, "_blank");
                     cell.appendChild(btn);
@@ -276,6 +282,7 @@ window.validateProgramRules = async function (programIds = null) {
                     row.insertCell(3).innerText = msg;
                     const cell = row.insertCell(4);
                     const btn = document.createElement("button");
+                    btn.className = "btn btn-small";
                     btn.innerText = "Maintenance";
                     btn.onclick = () => window.open(ruleLink, "_blank");
                     cell.appendChild(btn);
@@ -316,7 +323,7 @@ window.deleteSelectedVariables = async function () {
             .map(cb => cb.value);
         console.log("Ids to delete:", idsToDelete); // Added log for ids to delete
         if (idsToDelete.length === 0) {
-            M.toast({ html: "No variables selected for deletion.", classes: "red" });
+            M.toast({ html: escapeHtml("No variables selected for deletion."), classes: "red" });
             return;
         }
 
@@ -339,10 +346,10 @@ window.deleteSelectedVariables = async function () {
         }
 
         if (successCount > 0) {
-            M.toast({ html: `Deleted ${successCount} variables.`, classes: "green" });
+            M.toast({ html: `Deleted ${escapeHtml(successCount)} variables.`, classes: "green" });
         }
         if (failureCount > 0) {
-            M.toast({ html: `Failed to delete ${failureCount} variables.`, classes: "red" });
+            M.toast({ html: `Failed to delete ${escapeHtml(failureCount)} variables.`, classes: "red" });
         }
 
         // Disable delete button if no checkboxes are selected
@@ -351,7 +358,7 @@ window.deleteSelectedVariables = async function () {
         deleteSelectedButton.disabled = remainingCheckboxes.length === 0;
     } catch (error) {
         console.error("Deletion failed", error);
-        M.toast({ html: "Deletion failed.", classes: "red" });
+        M.toast({ html: escapeHtml("Deletion failed."), classes: "red" });
     }
 };
 
