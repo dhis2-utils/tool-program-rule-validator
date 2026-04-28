@@ -51,19 +51,15 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     validateSelectedButton.onclick = function () {
         const selectedProgramIds = programChoices.getValue(true);
-        if (selectedProgramIds.length > 0) {
-            validateSelectedButton.disabled = true;
-            validateAllButton.disabled = true;
-            deleteSelectedButton.disabled = true;
-            progressContainer.style.display = "block";
-            window.validateProgramRules(selectedProgramIds).finally(() => {
-                validateSelectedButton.disabled = false;
-                validateAllButton.disabled = false;
-                progressContainer.style.display = "none";
-            });
-        } else {
-            alert("Please select at least one program to validate.");
-        }
+        validateSelectedButton.disabled = true;
+        validateAllButton.disabled = true;
+        deleteSelectedButton.disabled = true;
+        progressContainer.style.display = "block";
+        window.validateProgramRules(selectedProgramIds).finally(() => {
+            validateSelectedButton.disabled = false;
+            validateAllButton.disabled = false;
+            progressContainer.style.display = "none";
+        });
     };
 
     validateAllButton.onclick = function () {
