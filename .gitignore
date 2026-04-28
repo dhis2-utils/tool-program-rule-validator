@@ -6,3 +6,5 @@ node_modules
 .vscode
 bin
 d2auth.json
+.DS_Store
+**/.DS_Store
