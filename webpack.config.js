@@ -35,14 +35,15 @@ async function fetchSessionCookie() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Extract and store JSESSIONID from the Set-Cookie header
-        const setCookieHeader = response.headers.get("set-cookie");
-        if (setCookieHeader) {
-            const jsessionIdCookie = setCookieHeader.split(",").find(header => header.includes("JSESSIONID"));
-            if (jsessionIdCookie) {
-                cookie = jsessionIdCookie.split(";")[0]; // Get only the `JSESSIONID=value` part
-                console.log("JSESSIONID cookie successfully set:", cookie);
-            }
+        // Node 18+ undici: getSetCookie() returns one entry per Set-Cookie header.
+        // Older fetch polyfills: fall back to headers.raw().
+        const setCookieHeaders = response.headers.getSetCookie?.()
+            ?? (response.headers.raw?.() ?? {})["set-cookie"]
+            ?? [];
+        const jsessionIdCookie = setCookieHeaders.find(h => h.includes("JSESSIONID"));
+        if (jsessionIdCookie) {
+            cookie = jsessionIdCookie.split(";")[0];
+            console.log("JSESSIONID cookie successfully set:", cookie);
         }
     } catch (error) {
         console.error("Failed to fetch JSESSIONID cookie:", error.message);
@@ -54,8 +55,6 @@ async function initialize() {
     console.log("Initialization has completed.");
 }
 
-// Call the initialize function to start the process
-initialize();
 const webpackConfig = {
     context: __dirname,
     entry: "./src/app.js",
@@ -156,4 +155,9 @@ const webpackConfig = {
     mode: "development"
 };
 
-module.exports = webpackConfig;
+// In dev, await the cookie-fetch before exposing the config so the proxy
+// has a session cookie ready to attach to the first request. In production
+// builds the cookie isn't used.
+module.exports = isDevBuild
+    ? initialize().then(() => webpackConfig)
+    : webpackConfig;

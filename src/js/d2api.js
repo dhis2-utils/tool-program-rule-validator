@@ -1,15 +1,11 @@
-const dhisDevConfig = DHIS_CONFIG;  
+const dhisDevConfig = DHIS_CONFIG;
 const isDev = "baseUrl" in dhisDevConfig;
-const baseUrl = isDev ? dhisDevConfig.baseUrl : "../../..";
+// Same-origin in dev: requests go through the webpack-dev-server proxy,
+// which injects Authorization. "../../.." in production: app served at
+// /api/apps/{name}/index.html resolves against the DHIS2 root.
+const baseUrl = isDev ? "" : "../../..";
 
-// Helper function to set headers for development mode
-const getHeaders = () => {
-    let headers = new Headers();
-    if (isDev) {
-        headers.set("Authorization", "Basic " + btoa(dhisDevConfig.username + ":" + dhisDevConfig.password));
-    }
-    return headers;
-};
+const getHeaders = () => new Headers();
 
 // Helper function to standardize endpoint format
 const formatEndpoint = (endpoint) => {
