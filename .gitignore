@@ -8,3 +8,5 @@ bin
 d2auth.json
 .DS_Store
 **/.DS_Store
+
+__pycache__/
