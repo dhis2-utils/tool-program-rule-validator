@@ -122,7 +122,8 @@ Webpack 5 supports an exported Promise for async config.
 -}
 +// node-fetch / undici expose multiple Set-Cookie headers individually.
 +const setCookieHeaders = response.headers.getSetCookie?.()
-+    ?? (response.headers.raw?.()["set-cookie"] ?? []);
++    ?? (response.headers.raw?.() ?? {})["set-cookie"]
++    ?? [];
 +const jsessionIdCookie = setCookieHeaders.find(h => h.includes("JSESSIONID"));
 +if (jsessionIdCookie) {
 +    cookie = jsessionIdCookie.split(";")[0];
