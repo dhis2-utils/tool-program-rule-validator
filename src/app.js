@@ -120,6 +120,92 @@ function filterUnusedVariablesTable() {
     }
 }
 
+async function processRule(program, rule, prvs) {
+    const programId = program.id;
+    const usedVariableNames = new Set();
+    const invalidConditionExpressions = [];
+    const invalidActionExpressions = [];
+
+    const recordUsage = (texts, hasValueSources) => {
+        const hasValuePRVs = new Set(hasValueSources.flatMap(extractPRVsFromD2HasValue));
+        const cleanTexts = texts.map(stripStringLiterals);
+        for (const prv of prvs) {
+            const ref1 = `#{${prv.name}}`;
+            const ref2 = `A{${prv.name}}`;
+            const usedInCurly = cleanTexts.some(t => t.includes(ref1) || t.includes(ref2));
+            const usedInHasValue = hasValuePRVs.has(prv.name);
+            if (usedInCurly || usedInHasValue) {
+                usedVariableNames.add(prv.name);
+            }
+        }
+    };
+
+    if (rule.condition) {
+        recordUsage([rule.condition], [rule.condition]);
+        try {
+            const res = await d2PostPlain(
+                `api/programRules/condition/description?programId=${programId}`,
+                rule.condition,
+            );
+            if (!res.ok || res.status === "ERROR") {
+                invalidConditionExpressions.push(res.description || res.message || "Condition validation failed");
+            }
+        } catch {
+            invalidConditionExpressions.push("Condition validation error");
+        }
+    }
+
+    for (const action of (rule.programRuleActions ?? [])) {
+        recordUsage([action.content || "", action.data || ""], [action.content || "", action.data || ""]);
+        if (action.data) {
+            try {
+                const res = await d2PostPlain(
+                    `api/programRuleActions/data/expression/description?programId=${programId}`,
+                    action.data,
+                );
+                if (!res.ok || res.status === "ERROR") {
+                    invalidActionExpressions.push(res.description || res.message || "Invalid action expression");
+                }
+            } catch {
+                invalidActionExpressions.push("Action expression validation error");
+            }
+        }
+    }
+
+    return { program, rule, invalidConditionExpressions, invalidActionExpressions, usedVariableNames };
+}
+
+function appendInvalidExpressionRow(tbody, program, rule, msg, ruleLink) {
+    const row = tbody.insertRow();
+    row.insertCell(0).innerText = program.name;
+    row.insertCell(1).innerText = rule.name;
+    row.insertCell(2).innerText = rule.id;
+    row.insertCell(3).innerText = msg;
+    const cell = row.insertCell(4);
+    const btn = document.createElement("button");
+    btn.className = "btn btn-small";
+    btn.innerText = "Maintenance";
+    btn.onclick = () => window.open(ruleLink, "_blank");
+    cell.appendChild(btn);
+}
+
+function appendUnusedVariableRow(tbody, program, variable) {
+    const row = tbody.insertRow();
+    const selectCell = row.insertCell(0);
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.classList.add("variable-checkbox", "filled-in");
+    checkbox.value = variable.id;
+    label.appendChild(checkbox);
+    label.appendChild(document.createElement("span"));
+    selectCell.appendChild(label);
+    row.insertCell(1).innerText = program.name;
+    row.cells[1].dataset.programId = program.id;
+    row.insertCell(2).innerText = variable.name;
+    row.insertCell(3).innerText = variable.id;
+}
+
 async function validateProgramRules(programIds = null) {
     const selectAllCheckbox = document.getElementById("selectAllCheckbox");
     selectAllCheckbox.onclick = function () {
@@ -136,7 +222,6 @@ async function validateProgramRules(programIds = null) {
 
     try {
         const programs = await d2Get("api/programs.json?fields=name,id&paging=false");
-        const programMap = new Map(programs.programs.map(program => [program.id, program.name]));
 
         const unusedVariablesTable = document.getElementById("unusedVariablesTable").querySelector("tbody");
         const invalidActionExpressionsTable = document.getElementById("invalidActionExpressionsTable").querySelector("tbody");
@@ -161,153 +246,62 @@ async function validateProgramRules(programIds = null) {
             false,
         );
 
-        const limit = pLimit(10);
+        const programLimit = pLimit(4);
+        const ruleLimit = pLimit(10);
 
-        for (const [programIndex, program] of selectedPrograms.entries()) {
-            const programId = program.id;
-            const programRules = await d2Get(`api/programRules.json?fields=name,id,condition,programRuleActions[data,content,description]&paging=false&filter=program.id:eq:${programId}`);
-            const programRuleVariables = await d2Get(`api/programRuleVariables.json?fields=name,id,program[id]&paging=false&filter=program.id:eq:${programId}`);
+        // Phase 1: in parallel, fetch rules + PRVs for each selected program.
+        const programData = await Promise.all(selectedPrograms.map(program =>
+            programLimit(async () => {
+                const [rulesResp, prvsResp] = await Promise.all([
+                    d2Get(`api/programRules.json?fields=name,id,condition,programRuleActions[data,content,description]&paging=false&filter=program.id:eq:${program.id}`),
+                    d2Get(`api/programRuleVariables.json?fields=name,id,program[id]&paging=false&filter=program.id:eq:${program.id}`),
+                ]);
+                return {
+                    program,
+                    rules: rulesResp.programRules,
+                    prvs: prvsResp.programRuleVariables,
+                };
+            })
+        ));
 
-            const usedVariables = new Set();
+        // Phase 2: evaluate every rule across every program in parallel,
+        // sharing the rule limit so we don't swamp DHIS2 (max ~14 fetches in
+        // flight at peak: programLimit(4) + ruleLimit(10)).
+        const totalRules = programData.reduce((n, pd) => n + pd.rules.length, 0);
+        let completedRules = 0;
+        const updateProgress = () => {
+            completedRules++;
+            const pct = totalRules > 0 ? (completedRules / totalRules) * 100 : 100;
+            progressCombinedBar.style.width = `${pct}%`;
+        };
 
+        const ruleResults = await Promise.all(programData.flatMap(({ program, rules, prvs }) =>
+            rules.map(rule => ruleLimit(async () => {
+                const result = await processRule(program, rule, prvs);
+                updateProgress();
+                return result;
+            }))
+        ));
 
-            const programStartProgress = (programIndex / selectedPrograms.length) * 100;
-            const programEndProgress = ((programIndex + 1) / selectedPrograms.length) * 100;
-            const programProgressInterval = programEndProgress - programStartProgress;
+        if (totalRules === 0) {
+            progressCombinedBar.style.width = "100%";
+        }
 
+        // Phase 3: render result tables. Group by program so rows from one
+        // program stay together.
+        const usedByProgramId = new Map();
+        for (const { program, rule, invalidConditionExpressions, invalidActionExpressions, usedVariableNames } of ruleResults) {
+            if (!usedByProgramId.has(program.id)) usedByProgramId.set(program.id, new Set());
+            for (const name of usedVariableNames) usedByProgramId.get(program.id).add(name);
+            const ruleLink = `../../../dhis-web-maintenance/index.html#/edit/programSection/programRule/${rule.id}`;
+            invalidConditionExpressions.forEach(msg => appendInvalidExpressionRow(invalidConditionExpressionsTable, program, rule, msg, ruleLink));
+            invalidActionExpressions.forEach(msg => appendInvalidExpressionRow(invalidActionExpressionsTable, program, rule, msg, ruleLink));
+        }
 
-            const tasks = programRules.programRules.map((rule, ruleIndex) => limit(async () => {
-                const ruleProgress = ((ruleIndex + 1) / programRules.programRules.length) * programProgressInterval;
-                progressCombinedBar.style.width = `${programStartProgress + ruleProgress}%`;
-
-                let invalidActionExpressions = [];
-                let invalidConditionExpressions = [];
-
-                if (rule.condition) {
-                    const cleanCondition = stripStringLiterals(rule.condition || "");
-
-                    // PRVs found in d2:hasValue('...')
-                    const hasValuePRVs = new Set(extractPRVsFromD2HasValue(rule.condition));
-
-                    for (const prv of programRuleVariables.programRuleVariables) {
-                        const ref1 = `#{${prv.name}}`;
-                        const ref2 = `A{${prv.name}}`;
-
-                        const usedInCurly = cleanCondition.includes(ref1) || cleanCondition.includes(ref2);
-                        const usedInHasValue = hasValuePRVs.has(prv.name);
-
-                        if (usedInCurly || usedInHasValue) {
-                            usedVariables.add(prv.name);
-                        }
-                    }
-
-                    // Still validate the condition with the backend
-                    try {
-                        const res = await d2PostPlain(
-                            `api/programRules/condition/description?programId=${programId}`,
-                            rule.condition
-                        );
-                        if (!res.ok || res.status === "ERROR") {
-                            invalidConditionExpressions.push(res.description || res.message || "Condition validation failed");
-                        }
-                    } catch {
-                        invalidConditionExpressions.push("Condition validation error");
-                    }
-                }
-
-                for (const action of (rule.programRuleActions ?? [])) {
-                    const cleanContent = stripStringLiterals(action.content || "");
-                    const cleanData = stripStringLiterals(action.data || "");
-
-                    const hasValuePRVs = new Set([
-                        ...extractPRVsFromD2HasValue(action.content || ""),
-                        ...extractPRVsFromD2HasValue(action.data || "")
-                    ]);
-
-                    for (const prv of programRuleVariables.programRuleVariables) {
-                        const ref1 = `#{${prv.name}}`;
-                        const ref2 = `A{${prv.name}}`;
-
-                        const usedInCurly = cleanContent.includes(ref1) || cleanContent.includes(ref2) ||
-                            cleanData.includes(ref1) || cleanData.includes(ref2);
-
-                        const usedInHasValue = hasValuePRVs.has(prv.name);
-
-                        if (usedInCurly || usedInHasValue) {
-                            usedVariables.add(prv.name);
-                        }
-                    }
-
-                    if (action.data) {
-                        try {
-                            const res = await d2PostPlain(
-                                `api/programRuleActions/data/expression/description?programId=${programId}`,
-                                action.data
-                            );
-                            if (!res.ok || res.status === "ERROR") {
-                                invalidActionExpressions.push(res.description || res.message || "Invalid action expression");
-                            }
-                        } catch {
-                            invalidActionExpressions.push("Action expression validation error");
-                        }
-                    }
-                }
-
-                return { rule, invalidActionExpressions, invalidConditionExpressions };
-            }));
-
-            const results = await Promise.all(tasks);
-
-            results.forEach(({ rule, invalidActionExpressions, invalidConditionExpressions }) => {
-                const ruleLink = `../../../dhis-web-maintenance/index.html#/edit/programSection/programRule/${rule.id}`;
-
-                invalidConditionExpressions.forEach(msg => {
-                    const row = invalidConditionExpressionsTable.insertRow();
-                    row.insertCell(0).innerText = program.name;
-                    row.insertCell(1).innerText = rule.name;
-                    row.insertCell(2).innerText = rule.id;
-                    row.insertCell(3).innerText = msg;
-                    const cell = row.insertCell(4);
-                    const btn = document.createElement("button");
-                    btn.className = "btn btn-small";
-                    btn.innerText = "Maintenance";
-                    btn.onclick = () => window.open(ruleLink, "_blank");
-                    cell.appendChild(btn);
-                });
-
-                invalidActionExpressions.forEach(msg => {
-                    const row = invalidActionExpressionsTable.insertRow();
-                    row.insertCell(0).innerText = program.name;
-                    row.insertCell(1).innerText = rule.name;
-                    row.insertCell(2).innerText = rule.id;
-                    row.insertCell(3).innerText = msg;
-                    const cell = row.insertCell(4);
-                    const btn = document.createElement("button");
-                    btn.className = "btn btn-small";
-                    btn.innerText = "Maintenance";
-                    btn.onclick = () => window.open(ruleLink, "_blank");
-                    cell.appendChild(btn);
-                });
-            });
-
-            const unusedVariables = programRuleVariables.programRuleVariables.filter(prv => !usedVariables.has(prv.name));
-
-            unusedVariables.forEach(variable => {
-                const row = unusedVariablesTable.insertRow();
-                const selectCell = row.insertCell(0);
-                const label = document.createElement("label");
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.classList.add("variable-checkbox", "filled-in");
-                checkbox.value = variable.id;
-                label.appendChild(checkbox);
-                label.appendChild(document.createElement("span"));
-                selectCell.appendChild(label);
-                row.insertCell(1).innerText = programMap.get(variable.program.id);
-                row.cells[1].dataset.programId = variable.program.id;
-                row.insertCell(2).innerText = variable.name;
-                row.insertCell(3).innerText = variable.id;
-            });
+        for (const { program, prvs } of programData) {
+            const used = usedByProgramId.get(program.id) ?? new Set();
+            const unused = prvs.filter(prv => !used.has(prv.name));
+            unused.forEach(variable => appendUnusedVariableRow(unusedVariablesTable, program, variable));
         }
 
         progressCombinedBar.style.width = "100%";
