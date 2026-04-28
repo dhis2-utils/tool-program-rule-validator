@@ -37,8 +37,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const validateAllButton = document.getElementById("validateAllButton");
     const progressContainer = document.querySelector(".progress-container");
 
-    const deleteSelectedButton = document.querySelector("button[onclick='window.deleteSelectedVariables()']");
+    const deleteSelectedButton = document.getElementById("deleteSelectedButton");
     deleteSelectedButton.disabled = true;
+    deleteSelectedButton.addEventListener("click", deleteSelectedVariables);
 
     // Enable/disable delete button based on checkbox selection
     document.getElementById("unusedVariablesTable").addEventListener("change", function () {
@@ -58,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         validateAllButton.disabled = true;
         deleteSelectedButton.disabled = true;
         progressContainer.style.display = "block";
-        window.validateProgramRules(selectedProgramIds).finally(() => {
+        validateProgramRules(selectedProgramIds).finally(() => {
             validateSelectedButton.disabled = false;
             validateAllButton.disabled = false;
             progressContainer.style.display = "none";
@@ -70,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         validateAllButton.disabled = true;
         deleteSelectedButton.disabled = true;
         progressContainer.style.display = "block";
-        window.validateProgramRules().finally(() => {
+        validateProgramRules().finally(() => {
             validateSelectedButton.disabled = false;
             validateAllButton.disabled = false;
             progressContainer.style.display = "none";
@@ -119,7 +120,7 @@ function filterUnusedVariablesTable() {
     }
 }
 
-window.validateProgramRules = async function (programIds = null) {
+async function validateProgramRules(programIds = null) {
     const selectAllCheckbox = document.getElementById("selectAllCheckbox");
     selectAllCheckbox.onclick = function () {
         const rows = document.querySelectorAll("#unusedVariablesTable tbody tr");
@@ -129,7 +130,7 @@ window.validateProgramRules = async function (programIds = null) {
                 checkbox.checked = selectAllCheckbox.checked;
             }
         });
-        const deleteSelectedButton = document.querySelector("button[onclick='window.deleteSelectedVariables()']");
+        const deleteSelectedButton = document.getElementById("deleteSelectedButton");
         deleteSelectedButton.disabled = document.querySelectorAll("#unusedVariablesTable .variable-checkbox:checked").length === 0;
     };
 
@@ -313,9 +314,9 @@ window.validateProgramRules = async function (programIds = null) {
     } catch (error) {
         console.error("Validation failed", error);
     }
-};
+}
 
-window.deleteSelectedVariables = async function () {
+async function deleteSelectedVariables() {
     try {
         const checkboxes = document.querySelectorAll("#unusedVariablesTable input[type='checkbox']:checked");
         const idsToDelete = Array.from(checkboxes)
@@ -354,12 +355,12 @@ window.deleteSelectedVariables = async function () {
 
         // Disable delete button if no checkboxes are selected
         const remainingCheckboxes = document.querySelectorAll("#unusedVariablesTable .variable-checkbox:checked");
-        const deleteSelectedButton = document.querySelector("button[onclick='window.deleteSelectedVariables()']");
+        const deleteSelectedButton = document.getElementById("deleteSelectedButton");
         deleteSelectedButton.disabled = remainingCheckboxes.length === 0;
     } catch (error) {
         console.error("Deletion failed", error);
         M.toast({ html: escapeHtml("Deletion failed."), classes: "red" });
     }
-};
+}
 
 
