@@ -139,6 +139,13 @@ const webpackConfig = {
                     } else {
                         console.warn("No cookie found");
                     }
+                    // Strip the browser's Origin header. Browsers send Origin
+                    // on every non-GET request; DHIS2 then applies CORS and
+                    // (in 2.42+) returns a 200 with an empty body when the
+                    // origin is not on its corsWhitelist. Removing it makes
+                    // DHIS2 treat the request as same-origin.
+                    proxyReq.removeHeader("Origin");
+                    proxyReq.removeHeader("Referer");
                 },
                 onProxyRes: (proxyRes) => {
                     const setCookieHeader = proxyRes.headers["set-cookie"];
