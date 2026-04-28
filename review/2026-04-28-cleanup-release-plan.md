@@ -518,7 +518,8 @@ Replace the trailing `initialize();` call and `module.exports = webpackConfig;` 
 +        // Node 18+ undici: getSetCookie() returns array of individual headers.
 +        // Older fetch polyfills: fall back to headers.raw().
 +        const setCookieHeaders = response.headers.getSetCookie?.()
-+            ?? (response.headers.raw?.()["set-cookie"] ?? []);
++            ?? (response.headers.raw?.() ?? {})["set-cookie"]
++            ?? [];
 +        const jsessionIdCookie = setCookieHeaders.find(h => h.includes("JSESSIONID"));
 +        if (jsessionIdCookie) {
 +            cookie = jsessionIdCookie.split(";")[0];
@@ -989,7 +990,7 @@ git commit -m "Replace confirm() with Materialize delete-confirm modal"
 ## T16: Add Playwright tests directory
 
 **Files:**
-- Create: `tests/playwright/conftest.py`
+- Create: `tests/playwright/common.py`
 - Create: `tests/playwright/test_smoke.py`
 - Create: `tests/playwright/test_cancel.py`
 - Create: `tests/playwright/test_delete_modal.py`
@@ -997,9 +998,9 @@ git commit -m "Replace confirm() with Materialize delete-confirm modal"
 
 **Why:** the project ships no test infrastructure today. The Playwright scripts written during the original review live in `/tmp/prv-test/` and are not portable. Move them into the project and add the new ones for cancel + modal.
 
-- [ ] **Step 1: Create directory and shared fixtures**
+- [ ] **Step 1: Create directory and shared helpers**
 
-`tests/playwright/conftest.py`:
+`tests/playwright/common.py` (not `conftest.py` — these are standalone scripts, not pytest):
 ```python
 """Shared fixtures: log in via /api/auth/login, return JSESSIONID cookie."""
 import json, os, urllib.request
@@ -1025,9 +1026,23 @@ def get_session_cookie():
     raise RuntimeError("No JSESSIONID returned")
 ```
 
-- [ ] **Step 2: Migrate existing smoke test**
+- [ ] **Step 2: Write the smoke test**
 
-`tests/playwright/test_smoke.py`: copy the body of `/tmp/prv-test/full_test.py` (covers app load, dropdown population, button states, tab switching, validate small/larger program, unused-variables interactions, filter), update import paths to use `conftest.py`'s `BASE_URL`/`DEV_URL`/`get_session_cookie`.
+`tests/playwright/test_smoke.py`: standalone script (run as `python3 tests/playwright/test_smoke.py`). Cover the assertions listed in `review/2026-04-28-cleanup-release-spec.md` under "Existing Playwright suite":
+
+1. App loads, programs dropdown populated.
+2. `Validate Selected` disabled with no selection.
+3. `Validate All` enabled at idle.
+4. `Delete Selected` disabled at idle.
+5. Tab switching across the three result tabs.
+6. Validate single program (Malaria Foci) → 2 unused PRVs.
+7. Validate larger program (Animal Health) → 3 unused PRVs.
+8. Invalid condition row rendering with an injected bad rule, including styled Maintenance button (className contains `btn`).
+9. Select-all / Unselect-all / Single-row check enables Delete.
+10. Filter by Programme.
+11. No console errors / no failed requests / no 4xx API responses.
+
+Use `from common import BASE_URL, DEV_URL, get_session_cookie` (rename `conftest.py` → `common.py` if not using pytest). Pattern follows the smoke probe template in `review/AGENT-REVIEW-INSTRUCTIONS.md`.
 
 - [ ] **Step 3: Add new cancel test**
 
