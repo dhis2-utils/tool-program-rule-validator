@@ -2,14 +2,26 @@
 
 These tests are standalone scripts (run with `python3 tests/playwright/test_*.py`),
 not pytest. `common.py` exposes configuration and a session-cookie helper.
+
+Required env vars: DHIS2_BASE_URL, DHIS2_USER, DHIS2_PASSWORD.
+Optional: DEV_URL (defaults to http://localhost:8081/).
 """
 import json
 import os
+import sys
 import urllib.request
 
-BASE_URL = os.environ.get("DHIS2_BASE_URL", "http://localhost:9021")
-USER = os.environ.get("DHIS2_USER", "claude")
-PASSWD = os.environ.get("DHIS2_PASSWORD", "Test12345!")
+
+def _require(name):
+    value = os.environ.get(name)
+    if not value:
+        sys.exit(f"ERROR: environment variable {name} is required. See tests/playwright/README.md.")
+    return value
+
+
+BASE_URL = _require("DHIS2_BASE_URL")
+USER = _require("DHIS2_USER")
+PASSWORD = _require("DHIS2_PASSWORD")
 DEV_URL = os.environ.get("DEV_URL", "http://localhost:8081/")
 
 
@@ -22,7 +34,7 @@ def get_session_cookie():
     """
     req = urllib.request.Request(
         f"{BASE_URL}/api/auth/login",
-        data=json.dumps({"username": USER, "password": PASSWD}).encode(),
+        data=json.dumps({"username": USER, "password": PASSWORD}).encode(),
         headers={"Content-Type": "application/json"},
         method="POST",
     )

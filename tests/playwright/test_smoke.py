@@ -22,7 +22,7 @@ import urllib.request
 
 from playwright.sync_api import sync_playwright
 
-from common import BASE_URL, DEV_URL, USER, PASSWD
+from common import BASE_URL, DEV_URL, USER, PASSWORD
 
 
 def post(path, body, ctype="application/json"):
@@ -31,7 +31,7 @@ def post(path, body, ctype="application/json"):
         data = json.dumps(body).encode()
     else:
         data = body.encode() if isinstance(body, str) else body
-    headers["Authorization"] = "Basic " + __import__("base64").b64encode(f"{USER}:{PASSWD}".encode()).decode()
+    headers["Authorization"] = "Basic " + __import__("base64").b64encode(f"{USER}:{PASSWORD}".encode()).decode()
     req = urllib.request.Request(f"{BASE_URL}{path}", data=data, method="POST", headers=headers)
     with urllib.request.urlopen(req) as r:
         return r.status, json.loads(r.read().decode())
@@ -41,13 +41,13 @@ def delete(path):
     req = urllib.request.Request(
         f"{BASE_URL}{path}",
         method="DELETE",
-        headers={"Authorization": "Basic " + __import__("base64").b64encode(f"{USER}:{PASSWD}".encode()).decode()},
+        headers={"Authorization": "Basic " + __import__("base64").b64encode(f"{USER}:{PASSWORD}".encode()).decode()},
     )
     with urllib.request.urlopen(req) as r:
         return r.status
 
 
-def assertEq(actual, expected, label):
+def assert_eq(actual, expected, label):
     if actual != expected:
         print(f"FAIL: {label}: expected {expected!r}, got {actual!r}")
         sys.exit(1)
@@ -65,7 +65,7 @@ def main():
         "priority": 999,
         "condition": "this is *** definitely not valid syntax ***",
     }
-    status, body = post("/api/programRules", bad_rule_payload)
+    _, body = post("/api/programRules", bad_rule_payload)
     bad_rule_uid = body["response"]["uid"]
     print(f"Created temp invalid rule: {bad_rule_uid}")
 
@@ -94,9 +94,9 @@ def main():
             print(f"PASS: programs dropdown populated ({options} options)")
 
             # 2-4. Idle button states.
-            assertEq(page.eval_on_selector("#validateSelectedButton", "el => el.disabled"), True, "Validate Selected disabled at idle")
-            assertEq(page.eval_on_selector("#validateAllButton", "el => el.disabled"), False, "Validate All enabled at idle")
-            assertEq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), True, "Delete Selected disabled at idle")
+            assert_eq(page.eval_on_selector("#validateSelectedButton", "el => el.disabled"), True, "Validate Selected disabled at idle")
+            assert_eq(page.eval_on_selector("#validateAllButton", "el => el.disabled"), False, "Validate All enabled at idle")
+            assert_eq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), True, "Delete Selected disabled at idle")
 
             # 5. Tab switching.
             for tab in ("INVALID ACTIONS", "UNUSED PROGRAM VARIABLES", "INVALID CONDITIONS"):
@@ -116,11 +116,11 @@ def main():
             )
             page.wait_for_timeout(500)
             unused = page.locator("#unusedVariablesTable tbody tr").count()
-            assertEq(unused, 2, "Malaria Foci unused PRV count")
+            assert_eq(unused, 2, "Malaria Foci unused PRV count")
 
             # 8. Invalid condition row + Maintenance button has Materialize class.
             cond_rows = page.locator("#invalidConditionExpressionsTable tbody tr").count()
-            assertEq(cond_rows, 1, "Invalid condition row from temp rule")
+            assert_eq(cond_rows, 1, "Invalid condition row from temp rule")
             btn_class = page.eval_on_selector("#invalidConditionExpressionsTable tbody tr button", "el => el.className")
             assert "btn" in btn_class, f"Maintenance button missing Materialize class: {btn_class!r}"
             print(f"PASS: Maintenance button has Materialize class ({btn_class!r})")
@@ -129,12 +129,12 @@ def main():
             page.locator("ul.tabs li.tab a", has_text="UNUSED PROGRAM VARIABLES").first.click(); page.wait_for_timeout(300)
             page.locator("#selectAllCheckbox").check(force=True)
             page.wait_for_timeout(200)
-            assertEq(page.locator("#unusedVariablesTable .variable-checkbox:checked").count(), 2, "Select All ticks all rows")
-            assertEq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), False, "Delete enabled after Select All")
+            assert_eq(page.locator("#unusedVariablesTable .variable-checkbox:checked").count(), 2, "Select All ticks all rows")
+            assert_eq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), False, "Delete enabled after Select All")
             page.locator("#selectAllCheckbox").uncheck(force=True); page.wait_for_timeout(200)
-            assertEq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), True, "Delete disabled after Unselect All")
+            assert_eq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), True, "Delete disabled after Unselect All")
             page.locator("#unusedVariablesTable .variable-checkbox").first.check(force=True); page.wait_for_timeout(200)
-            assertEq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), False, "Delete enabled with one row ticked")
+            assert_eq(page.eval_on_selector("#deleteSelectedButton", "el => el.disabled"), False, "Delete enabled with one row ticked")
             page.locator("#unusedVariablesTable .variable-checkbox").first.uncheck(force=True)
 
             # 10. Filter by Programme.
@@ -143,7 +143,7 @@ def main():
             page.locator(".choices__list--dropdown .choices__item--selectable", has_text="Malaria Foci").first.click()
             page.wait_for_timeout(300)
             visible = page.locator("#unusedVariablesTable tbody tr:not([style*='display: none'])").count()
-            assertEq(visible, 2, "Filter shows 2 rows (Malaria Foci only)")
+            assert_eq(visible, 2, "Filter shows 2 rows (Malaria Foci only)")
 
             # 7. Validate Animal Health.
             page.reload()
@@ -161,15 +161,15 @@ def main():
             )
             page.wait_for_timeout(500)
             unused_animal = page.locator("#unusedVariablesTable tbody tr").count()
-            assertEq(unused_animal, 3, "Animal Health unused PRV count")
+            assert_eq(unused_animal, 3, "Animal Health unused PRV count")
 
             # 11. No errors throughout.
             errors = [m for t, m in console_msgs if t == "error"]
             api_4xx = [(s, u) for s, u in http_errors if "/api/" in u]
-            assertEq(len(errors), 0, "No console errors")
-            assertEq(len(page_errors), 0, "No page errors")
-            assertEq(len(failed_requests), 0, "No failed requests")
-            assertEq(len(api_4xx), 0, "No 4xx API responses")
+            assert_eq(len(errors), 0, "No console errors")
+            assert_eq(len(page_errors), 0, "No page errors")
+            assert_eq(len(failed_requests), 0, "No failed requests")
+            assert_eq(len(api_4xx), 0, "No 4xx API responses")
 
             browser.close()
         print("\nAll smoke assertions PASSED")

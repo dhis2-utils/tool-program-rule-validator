@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 from common import DEV_URL
 
 
-def assertEq(actual, expected, label):
+def assert_eq(actual, expected, label):
     if actual != expected:
         print(f"FAIL: {label}: expected {expected!r}, got {actual!r}")
         sys.exit(1)
@@ -51,18 +51,18 @@ def main():
         # Modal should be open with count "1".
         modal_open = page.evaluate("() => document.getElementById('deleteConfirmModal').classList.contains('open')")
         count_text = page.eval_on_selector("#deleteConfirmCount", "el => el.innerText")
-        assertEq(modal_open, True, "Delete modal open after click")
-        assertEq(count_text, "1", "Modal shows count of 1")
+        assert_eq(modal_open, True, "Delete modal open after click")
+        assert_eq(count_text, "1", "Modal shows count of 1")
 
         # Click Cancel inside modal.
         page.locator("#deleteConfirmModal .modal-close.btn-flat").click()
         page.wait_for_timeout(800)
-        assertEq(page.evaluate("() => document.getElementById('deleteConfirmModal').classList.contains('open')"), False, "Modal closed after Cancel")
-        assertEq(len(delete_calls), 0, "No DELETE request fired on Cancel")
+        assert_eq(page.evaluate("() => document.getElementById('deleteConfirmModal').classList.contains('open')"), False, "Modal closed after Cancel")
+        assert_eq(len(delete_calls), 0, "No DELETE request fired on Cancel")
 
         # No console errors.
         errors = [m for t, m in console_msgs if t == "error"]
-        assertEq(errors, [], "No console errors")
+        assert_eq(errors, [], "No console errors")
 
         browser.close()
     print("\nAll delete-modal assertions PASSED")
