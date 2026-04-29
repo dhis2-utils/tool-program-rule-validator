@@ -15,7 +15,7 @@ import { loadLegacyHeaderBarIfNeeded } from "./js/check-header-bar.js";
 
 let unusedVariablesFilter;
 
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c =>
+const escapeHtml = (s) => String(s).replaceAll(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 
 function stripStringLiterals(expression) {
-    return expression.replace(/(["'])(?:\\.|[^\\])*?\1/g, "");
+    return expression.replaceAll(/(["'])(?:\\.|[^\\])*?\1/g, "");
 }
 
 function extractPRVsFromD2HasValue(expression) {
@@ -127,59 +127,60 @@ function filterUnusedVariablesTable() {
     }
 }
 
+async function describeExpression(endpoint, expression, signal, fallbackErrorMessage) {
+    try {
+        const res = await d2PostPlain(endpoint, expression, { signal });
+        if (!res.ok || res.status === "ERROR") {
+            return res.description || res.message || fallbackErrorMessage;
+        }
+        return null;
+    } catch (error) {
+        if (error.name === "AbortError") throw error;
+        return fallbackErrorMessage;
+    }
+}
+
+function recordVariableUsage(prvs, texts, hasValueSources, sink) {
+    const hasValuePRVs = new Set(hasValueSources.flatMap(extractPRVsFromD2HasValue));
+    const cleanTexts = texts.map(stripStringLiterals);
+    for (const prv of prvs) {
+        const ref1 = `#{${prv.name}}`;
+        const ref2 = `A{${prv.name}}`;
+        const usedInCurly = cleanTexts.some(t => t.includes(ref1) || t.includes(ref2));
+        if (usedInCurly || hasValuePRVs.has(prv.name)) {
+            sink.add(prv.name);
+        }
+    }
+}
+
 async function processRule(program, rule, prvs, signal) {
     const programId = program.id;
     const usedVariableNames = new Set();
     const invalidConditionExpressions = [];
     const invalidActionExpressions = [];
 
-    const recordUsage = (texts, hasValueSources) => {
-        const hasValuePRVs = new Set(hasValueSources.flatMap(extractPRVsFromD2HasValue));
-        const cleanTexts = texts.map(stripStringLiterals);
-        for (const prv of prvs) {
-            const ref1 = `#{${prv.name}}`;
-            const ref2 = `A{${prv.name}}`;
-            const usedInCurly = cleanTexts.some(t => t.includes(ref1) || t.includes(ref2));
-            const usedInHasValue = hasValuePRVs.has(prv.name);
-            if (usedInCurly || usedInHasValue) {
-                usedVariableNames.add(prv.name);
-            }
-        }
-    };
-
     if (rule.condition) {
-        recordUsage([rule.condition], [rule.condition]);
-        try {
-            const res = await d2PostPlain(
-                `api/programRules/condition/description?programId=${programId}`,
-                rule.condition,
-                { signal },
-            );
-            if (!res.ok || res.status === "ERROR") {
-                invalidConditionExpressions.push(res.description || res.message || "Condition validation failed");
-            }
-        } catch (error) {
-            if (error.name === "AbortError") throw error;
-            invalidConditionExpressions.push("Condition validation error");
-        }
+        recordVariableUsage(prvs, [rule.condition], [rule.condition], usedVariableNames);
+        const err = await describeExpression(
+            `api/programRules/condition/description?programId=${programId}`,
+            rule.condition,
+            signal,
+            "Condition validation error",
+        );
+        if (err) invalidConditionExpressions.push(err);
     }
 
     for (const action of (rule.programRuleActions ?? [])) {
-        recordUsage([action.content || "", action.data || ""], [action.content || "", action.data || ""]);
+        const texts = [action.content || "", action.data || ""];
+        recordVariableUsage(prvs, texts, texts, usedVariableNames);
         if (action.data) {
-            try {
-                const res = await d2PostPlain(
-                    `api/programRuleActions/data/expression/description?programId=${programId}`,
-                    action.data,
-                    { signal },
-                );
-                if (!res.ok || res.status === "ERROR") {
-                    invalidActionExpressions.push(res.description || res.message || "Invalid action expression");
-                }
-            } catch (error) {
-                if (error.name === "AbortError") throw error;
-                invalidActionExpressions.push("Action expression validation error");
-            }
+            const err = await describeExpression(
+                `api/programRuleActions/data/expression/description?programId=${programId}`,
+                action.data,
+                signal,
+                "Action expression validation error",
+            );
+            if (err) invalidActionExpressions.push(err);
         }
     }
 

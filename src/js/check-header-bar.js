@@ -7,9 +7,9 @@ function parseServerVersion(versionString) {
     const [majorStr, minorStr, patchStr = "0"] = cleanedVersion.split(".");
     
     return {
-        major: parseInt(majorStr, 10) || 0,
-        minor: parseInt(minorStr, 10) || 0,
-        patch: parseInt(patchStr, 10) || 0,
+        major: Number.parseInt(majorStr, 10) || 0,
+        minor: Number.parseInt(minorStr, 10) || 0,
+        patch: Number.parseInt(patchStr, 10) || 0,
         snapshot
     };
 }

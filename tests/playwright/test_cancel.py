@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 from common import DEV_URL
 
 
-def assertEq(actual, expected, label):
+def assert_eq(actual, expected, label):
     if actual != expected:
         print(f"FAIL: {label}: expected {expected!r}, got {actual!r}")
         sys.exit(1)
@@ -28,7 +28,7 @@ def main():
         page.wait_for_timeout(800)
 
         # Idle: cancel button hidden.
-        assertEq(page.eval_on_selector("#cancelButton", "el => el.style.display"), "none", "Cancel hidden at idle")
+        assert_eq(page.eval_on_selector("#cancelButton", "el => el.style.display"), "none", "Cancel hidden at idle")
 
         # Start a Validate All. The cancel button should appear.
         page.locator("#validateAllButton").click()
@@ -46,13 +46,13 @@ def main():
         )
         page.wait_for_timeout(400)
 
-        assertEq(page.eval_on_selector("#cancelButton", "el => el.style.display"), "none", "Cancel hidden after click")
-        assertEq(page.eval_on_selector(".progress-container", "el => el.style.display"), "none", "Progress hidden after cancel")
-        assertEq(page.eval_on_selector("#validateAllButton", "el => el.disabled"), False, "Validate All re-enabled after cancel")
+        assert_eq(page.eval_on_selector("#cancelButton", "el => el.style.display"), "none", "Cancel hidden after click")
+        assert_eq(page.eval_on_selector(".progress-container", "el => el.style.display"), "none", "Progress hidden after cancel")
+        assert_eq(page.eval_on_selector("#validateAllButton", "el => el.disabled"), False, "Validate All re-enabled after cancel")
 
         # No AbortError should leak to the console.
         bad = [m for t, m in console_msgs if t == "error" and ("AbortError" in m or "Validation failed" in m)]
-        assertEq(bad, [], "No AbortError / 'Validation failed' messages in console")
+        assert_eq(bad, [], "No AbortError / 'Validation failed' messages in console")
 
         browser.close()
     print("\nAll cancel assertions PASSED")

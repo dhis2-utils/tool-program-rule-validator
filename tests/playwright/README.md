@@ -9,28 +9,22 @@ Three standalone Python scripts that exercise the app against the dev server.
   pip install playwright
   playwright install --with-deps chromium
   ```
-- A running DHIS2 instance (defaults to `http://localhost:9021`, user `claude`,
-  password `Test12345!`) and the app's dev server (`yarn start` on port 8081).
+- A running DHIS2 instance and the app's dev server (`yarn start` on port 8081).
+- Three required environment variables: `DHIS2_BASE_URL`, `DHIS2_USER`,
+  `DHIS2_PASSWORD`. `DEV_URL` is optional (defaults to `http://localhost:8081/`).
 
 ## Running
 
 From the project root, with the dev server running:
 
 ```
-python3 tests/playwright/test_smoke.py
-python3 tests/playwright/test_cancel.py
-python3 tests/playwright/test_delete_modal.py
-```
-
-Override defaults via env vars when needed:
-
-```
-DHIS2_BASE_URL=http://other-instance:8080 \
+DHIS2_BASE_URL=http://localhost:8080/dhis \
 DHIS2_USER=admin \
 DHIS2_PASSWORD=district \
-DEV_URL=http://localhost:8081/ \
 python3 tests/playwright/test_smoke.py
 ```
+
+The same variables apply to `test_cancel.py` and `test_delete_modal.py`.
 
 ## What each test covers
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const path = require("path");
+const path = require("node:path");
 const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
@@ -18,7 +18,7 @@ try {
 }
 
 const devServerPort = 8081;
-const isDevBuild = process.argv[1].indexOf("webpack-dev-server") !== -1;
+const isDevBuild = process.argv[1].includes("webpack-dev-server");
 
 
 let cookie = ""; // Store cookie globally
@@ -38,7 +38,7 @@ async function fetchSessionCookie() {
         // Node 18+ undici: getSetCookie() returns one entry per Set-Cookie header.
         // Older fetch polyfills: fall back to headers.raw().
         const setCookieHeaders = response.headers.getSetCookie?.()
-            ?? (response.headers.raw?.() ?? {})["set-cookie"]
+            ?? response.headers.raw?.()?.["set-cookie"]
             ?? [];
         const jsessionIdCookie = setCookieHeaders.find(h => h.includes("JSESSIONID"));
         if (jsessionIdCookie) {
@@ -113,14 +113,14 @@ const webpackConfig = {
                 { from: "./src/resources/dhis-header-bar.js", to: "resources" }
             ]
         }),
-        !isDevBuild ? undefined : new webpack.DefinePlugin({
+        isDevBuild ? new webpack.DefinePlugin({
             DHIS_CONFIG: JSON.stringify(dhisConfig),
-        }),
+        }) : undefined,
         isDevBuild ? undefined : new webpack.DefinePlugin({
             "process.env.NODE_ENV": "\"production\"",
             DHIS_CONFIG: JSON.stringify({}),
         }),
-    ].filter(v => v),
+    ].filter(Boolean),
     devServer: {
         port: devServerPort,
         compress: true,
