@@ -1,0 +1,8 @@
+.filterRow {
+    margin-block-end: var(--spacers-dp12);
+    max-inline-size: 400px;
+}
+
+.deleteRow {
+    margin-block-start: var(--spacers-dp12);
+}

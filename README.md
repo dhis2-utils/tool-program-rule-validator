@@ -1,46 +1,48 @@
 # Program Rule Validator Tool
-Tool to validate program rule and program rules variables, identifying invalid program rules and unused variables. It allows bulk deletion of unused program rule variables.
+
+Tool to validate program rules and program rule variables, identifying invalid program rules and unused variables. It allows bulk deletion of unused program rule variables.
 
 > **WARNING**
 > This tool is intended to be used by system administrators to perform specific tasks, it is not intended for end users. It is available as a DHIS2 app, but has not been through the same rigorous testing as normal core apps. It should be used with care, and always tested in a development environment.
 
+The app is built with the [DHIS2 App Platform](https://developers.dhis2.org/docs/app-platform/getting-started) (React, `@dhis2/app-runtime`, `@dhis2/ui`) and supports DHIS2 2.40 and later.
 
 ## License
-© Copyright University of Oslo 2024
 
+© Copyright University of Oslo 2024
 
 ## Getting started
 
 ### Install dependencies
-To install app dependencies:
 
 ```
-yarn install
+pnpm install
 ```
 
-### Compile to zip
-To compile the app to a .zip file that can be installed in DHIS2:
+### Start the dev server
 
 ```
-yarn run zip
+pnpm start
 ```
 
-### Start dev server
-To start the webpack development server:
+This starts the app on http://localhost:3000, connecting to a DHIS2 instance on http://localhost:8080 by default. To develop against a remote instance, use the built-in CORS proxy:
 
 ```
-yarn start
+pnpm start --proxy https://play.im.dhis2.org/dev-2-43
 ```
 
-By default, webpack will start on port 8081, and assumes DHIS2 is running on 
-http://localhost:8080/dhis with `admin:district` as the user and password.
+Then log in with the instance credentials at the login screen (use http://localhost:8080 as the server URL when using the proxy).
 
-A different DHIS2 instance can be used to develop against by adding a `d2auth.json` file like this:
+### Run tests
 
 ```
-{
-    "baseUrl": "http://localhost:9000/dev",
-    "username": "john_doe",
-    "password": "District1!"
-}
+pnpm test
 ```
+
+### Build a deployable zip
+
+```
+pnpm run build
+```
+
+The installable app bundle is written to `build/bundle/tool-pr-validator-<version>.zip`, which can be installed in DHIS2 via App Management.

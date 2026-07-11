@@ -1,0 +1,47 @@
+.container {
+    padding: var(--spacers-dp24);
+    max-inline-size: 1200px;
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-block-size: 300px;
+}
+
+.title {
+    margin: 0 0 var(--spacers-dp8) 0;
+    font-size: 24px;
+    color: var(--colors-grey900);
+}
+
+.description {
+    margin: 0 0 var(--spacers-dp24) 0;
+    color: var(--colors-grey700);
+}
+
+.controls {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--spacers-dp16);
+    flex-wrap: wrap;
+    margin-block-end: var(--spacers-dp16);
+}
+
+.programSelect {
+    min-inline-size: 300px;
+}
+
+.progress {
+    margin-block: var(--spacers-dp16);
+}
+
+.notice {
+    margin-block: var(--spacers-dp16);
+    max-inline-size: 600px;
+}
+
+.tabContent {
+    margin-block-start: var(--spacers-dp16);
+}

@@ -37,46 +37,47 @@ This tool validates program rules and program rule variables in DHIS2, identifyi
 
 #### Selecting Programs
 
-1. Use the dropdown menu under "Programme(s) to validate" to select multiple programs to validate.
-2. To search for a program, type the program name in the search box.
+1. Use the "Programs to validate" dropdown menu to select multiple programs to validate.
+2. To search for a program, type the program name in the filter box.
 
 #### Validating Programs
 
-1. **Validate Selected:**
-   - Enable by selecting at least one program from the dropdown.
-   - Click the "Validate Selected" button to validate the selected programs.
-   
-2. **Validate All:**
-   - Click the "Validate All" button to validate all programs available in the DHIS2 instance.
+1. **Validate selected:**
+    - Enable by selecting at least one program from the dropdown.
+    - Click the "Validate selected" button to validate the selected programs.
+2. **Validate all:**
+    - Click the "Validate all" button to validate all programs available in the DHIS2 instance.
 
 3. **Progress:**
-   - A progress bar will appear indicating the validation progress. Not that validating programmes can take sevral minutes.
+    - A progress bar will appear indicating the validation progress. Note that validating many programs can take several minutes. A running validation can be stopped with the "Cancel" button.
 
 #### Viewing Results
 
+The result tabs appear once a validation run completes.
+
 1. **Invalid Conditions:**
-   - The "Invalid Conditions" tab lists program rules with invalid condition expressions.
+    - The "Invalid conditions" tab lists program rules with invalid condition expressions.
 
 2. **Invalid Actions:**
-   - The "Invalid Actions" tab lists program rule actions with invalid expressions.
+    - The "Invalid actions" tab lists program rule actions with invalid expressions.
 
 3. **Unused Variables:**
-   - The "Unused Variables" tab displays a table of program rule variables not used in any program rules.
-   - Use the "Filter by Programme" dropdown to filter variables by selected programs.
+    - The "Unused program variables" tab displays a table of program rule variables not used in any program rules.
+    - Use the "Filter by program" dropdown to filter variables by selected programs.
 
 #### Deleting Unused Variables
 
 1. **Select Variables to Delete:**
-   - Use checkboxes in the "Unused Variables" table to select variables for deletion.
-   - The "Delete selected" button will enable when at least one variable is checked.
+    - Use checkboxes in the "Unused program variables" table to select variables for deletion.
+    - The "Delete selected" button will enable when at least one variable is checked.
 
 2. **Delete Selected Variables:**
-   - Click "Delete selected" to remove the selected program rule variables from the DHIS2 instance.
-   - A confirmation prompt will appear to confirm deletion.
+    - Click "Delete selected" to remove the selected program rule variables from the DHIS2 instance.
+    - A confirmation prompt will appear to confirm deletion.
 
 3. **Feedback:**
-   - A success message will display if variables are deleted successfully.
-   - A failure message will display if there were any issues during deletion.
+    - A success message will display if variables are deleted successfully.
+    - A failure message will display if there were any issues during deletion.
 
 ## Best Practices
 

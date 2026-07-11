@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+    push:
+        branches:
+            - main
+        tags:
+            - 'v*.*.*'
+    pull_request:
+
+permissions:
+    contents: write
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - name: Use Node.js 22
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Lint
+              run: pnpm run lint
+
+            - name: Test
+              run: pnpm test
+              env:
+                  CI: true
+
+            - name: Build
+              run: pnpm run build
+
+            - name: Get version and app name
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  echo "version=$(jq -r .version package.json)" >> $GITHUB_ENV
+                  echo "app_name=$(jq -r .name package.json)" >> $GITHUB_ENV
+
+            - name: Create Release
+              if: github.ref == 'refs/heads/main'
+              uses: actions/create-release@v1
+              id: create_release
+              with:
+                  draft: false
+                  prerelease: false
+                  release_name: ${{ env.version }}
+                  tag_name: v${{ env.version }}
+                  body_path: CHANGELOG.md
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Upload Release Asset
+              if: github.ref == 'refs/heads/main'
+              uses: actions/upload-release-asset@v1
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: './build/bundle/${{ env.app_name }}-${{ env.version }}.zip'
+                  asset_name: '${{ env.app_name }}-${{ env.version }}.zip'
+                  asset_content_type: application/zip
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

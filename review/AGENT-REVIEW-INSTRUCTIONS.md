@@ -59,7 +59,7 @@ yarn start &> /tmp/dev.log &
 # empty or any fetch returns 4xx/CORS errors, fix that first.
 ```
 
-If the dev server proxy is misconfigured (a real bug we hit), the app will load HTML but no API data. Always assert that *some* known data appears (program count, org-unit count, etc.) in your first probe.
+If the dev server proxy is misconfigured (a real bug we hit), the app will load HTML but no API data. Always assert that _some_ known data appears (program count, org-unit count, etc.) in your first probe.
 
 ## Playwright patterns
 
@@ -153,12 +153,12 @@ Things to actively diff across versions:
 
 Keep a single results table with one column per instance and one row per test step:
 
-| Step | 2.40 | 2.41 | 2.42 |
-|---|---|---|---|
-| App loads | PASS | PASS | PASS |
-| Programs dropdown populated | PASS (28) | PASS (28) | PASS (28) |
-| Validate single program | PASS | FAIL: 4xx on `/api/programRules/condition/description` | PASS |
-| Invalid-condition tab populates | PASS | n/a | PASS |
+| Step                            | 2.40      | 2.41                                                   | 2.42      |
+| ------------------------------- | --------- | ------------------------------------------------------ | --------- |
+| App loads                       | PASS      | PASS                                                   | PASS      |
+| Programs dropdown populated     | PASS (28) | PASS (28)                                              | PASS (28) |
+| Validate single program         | PASS      | FAIL: 4xx on `/api/programRules/condition/description` | PASS      |
+| Invalid-condition tab populates | PASS      | n/a                                                    | PASS      |
 
 Failures that occur on only one version are far more interesting than uniform passes — flag them prominently in the report.
 
@@ -199,7 +199,7 @@ Don't pad the list. A 5-finding report with concrete fixes is more useful than a
 
 ## Scope discipline
 
-- A bug fix is *not* an excuse to refactor the surrounding code. If asked to "review", do not also implement.
+- A bug fix is _not_ an excuse to refactor the surrounding code. If asked to "review", do not also implement.
 - If the user asks for testing only, write tests and report. Do not edit the app.
 - If the user asks for a fix to a specific finding, fix only that one and ask before bundling other findings into the same change.
 

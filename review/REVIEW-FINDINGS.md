@@ -10,21 +10,21 @@ Reviewed against `main` @ commit `9e543ea`, tested against DHIS2 2.42.4 at `http
 
 ## UI test results — all functional flows pass
 
-| Flow | Result |
-|---|---|
-| App loads, programs dropdown populated (28 programs) | PASS |
-| `Validate Selected` disabled with no selection | PASS |
-| `Validate All` enabled at idle | PASS |
-| `Delete Selected` disabled at idle | PASS |
-| Tab switching between Invalid Conditions / Invalid Actions / Unused Variables | PASS |
-| Validate single program (Malaria Foci, 12 rules / 14 PRVs) → 2 unused PRVs detected | PASS |
-| Validate larger program (Animal Health, 67 rules) → 3 unused PRVs detected | PASS |
-| Invalid condition row rendering (with injected bad rule) — backend message + Maintenance button | PASS |
-| Select-all checkbox ticks every visible row, enables Delete | PASS |
-| Unselect-all disables Delete | PASS |
-| Single-row check enables Delete | PASS |
-| Filter by Programme — narrows visible rows correctly | PASS |
-| No console errors / no failed requests / no 4xx API responses across the entire run | PASS |
+| Flow                                                                                            | Result |
+| ----------------------------------------------------------------------------------------------- | ------ |
+| App loads, programs dropdown populated (28 programs)                                            | PASS   |
+| `Validate Selected` disabled with no selection                                                  | PASS   |
+| `Validate All` enabled at idle                                                                  | PASS   |
+| `Delete Selected` disabled at idle                                                              | PASS   |
+| Tab switching between Invalid Conditions / Invalid Actions / Unused Variables                   | PASS   |
+| Validate single program (Malaria Foci, 12 rules / 14 PRVs) → 2 unused PRVs detected             | PASS   |
+| Validate larger program (Animal Health, 67 rules) → 3 unused PRVs detected                      | PASS   |
+| Invalid condition row rendering (with injected bad rule) — backend message + Maintenance button | PASS   |
+| Select-all checkbox ticks every visible row, enables Delete                                     | PASS   |
+| Unselect-all disables Delete                                                                    | PASS   |
+| Single-row check enables Delete                                                                 | PASS   |
+| Filter by Programme — narrows visible rows correctly                                            | PASS   |
+| No console errors / no failed requests / no 4xx API responses across the entire run             | PASS   |
 
 The deletion endpoint was not exercised against real data, but the disabled-state, confirmation, and row-removal logic is shared across all paths and was indirectly verified through the select/unselect interactions and the API call signature in `src/app.js:334`.
 
@@ -37,6 +37,7 @@ The deletion endpoint was not exercised against real data, but the disabled-stat
 `webpack.config.js:130-159` defines a full request-proxy with cookie management, but `src/js/d2api.js:3` sets `baseUrl = isDev ? dhisDevConfig.baseUrl : "../../..";` — every fetch in dev mode goes cross-origin to `http://localhost:9021/...` directly, bypassing the proxy entirely. The browser then needs the DHIS2 instance to have `http://localhost:8081` in its CORS allowlist, otherwise the app silently fails (dropdown stays empty, only console errors).
 
 Two ways to fix:
+
 1. Delete the proxy + cookie code in `webpack.config.js` and document the CORS requirement in the README.
 2. Change `d2api.js:3` to `const baseUrl = ""` in dev so requests go through the proxy as originally intended.
 
@@ -84,7 +85,7 @@ Both validate buttons are disabled while a run is in progress, but there is no a
 
 ### [LOW] 12. `parseServerVersion` returns `NaN` silently on garbage input
 
-`parseInt("abc", 10) → NaN`, and `NaN < 42` is `false`. So if `version` is malformed, the legacy bar is *not* loaded — which is the opposite of the `catch` branch in `shouldLoadLegacyHeaderBar`, which forces it on. The two paths disagree on the safe-default behaviour.
+`parseInt("abc", 10) → NaN`, and `NaN < 42` is `false`. So if `version` is malformed, the legacy bar is _not_ loaded — which is the opposite of the `catch` branch in `shouldLoadLegacyHeaderBar`, which forces it on. The two paths disagree on the safe-default behaviour.
 
 ### [LOW] 13. `src/js/d2api.js:27-28` has a duplicated comment
 
@@ -104,7 +105,7 @@ Committed `manifest.webapp` has `version: "0.1.3"` while `package.json` is `0.1.
 
 ### [LOW] 17. Unused dependency: jquery
 
-`package.json:6` lists `jquery`, and `webpack.config.js:117-121` provides `$` / `jQuery` / `window.jQuery` globally, but nothing in `src/` imports or uses jQuery. Materialize CSS v1 *can* use jQuery internally but works without it for the features used here (tabs, toasts). Drop the dependency or document why it stays.
+`package.json:6` lists `jquery`, and `webpack.config.js:117-121` provides `$` / `jQuery` / `window.jQuery` globally, but nothing in `src/` imports or uses jQuery. Materialize CSS v1 _can_ use jQuery internally but works without it for the features used here (tabs, toasts). Drop the dependency or document why it stays.
 
 ### [LOW] 18. `.DS_Store` files committed and copied into builds
 

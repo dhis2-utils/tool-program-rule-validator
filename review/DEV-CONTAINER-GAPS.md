@@ -14,11 +14,13 @@ This is a list of friction points the agent hit while bringing the test environm
 ### 1. Playwright was not pre-installed
 
 Had to:
+
 1. `pip install --break-system-packages playwright` (PEP 668 blocked plain `pip install`).
 2. `python3 -m playwright install chromium` to fetch the browser binary.
 3. `sudo PYTHONPATH=/home/agent/.local/lib/python3.12/site-packages /home/agent/.local/bin/playwright install-deps chromium` to install the missing system libraries (`libnss3`, `libatk1.0-0t64`, etc.). The straight `apt-get install` approach failed because Ubuntu 24.04 renamed several packages (`libcups2t64` → `libcups2`, `libpango-1.0-0` is not a valid name on Noble), so Playwright's own dep installer is the only reliable path.
 
 **Fix**: pre-install Playwright + chromium + system libs in the container. One-liner during image build:
+
 ```
 pip install --break-system-packages playwright \
   && playwright install --with-deps chromium
@@ -35,12 +37,14 @@ PEP 668 / `EXTERNALLY-MANAGED` on Ubuntu 24.04 means a default `pip install` err
 The committed `d2auth.json` pointed at `http://localhost:9595/slt10` (a different instance), not the `localhost:9021` instance the agent was told to use. Easy to edit, but a 30-second detour every time.
 
 **Fix**: either
+
 - ship a `d2auth.json` in the container that already matches the running instance, or
 - have the dev server read from environment variables (`DHIS2_BASE_URL`, `DHIS2_USERNAME`, `DHIS2_PASSWORD`) with a sensible fallback to `d2auth.json`. The latter is more robust across instances/users.
 
 ### 4. The DHIS2 instance's `corsWhitelist` did not include the dev-server origin
 
 The dev server runs at `:8081`, but the DHIS2 server's `corsWhitelist` only allowed `:3000`. As a result, the dev-server build hit CORS errors and the app appeared completely broken until the allowlist was extended via:
+
 ```
 PUT /api/configuration/corsWhitelist
 ```

@@ -105,7 +105,7 @@ break in dev mode.
 
 The current pattern works, but it teaches every fork to ship the `window.*` global +
 inline `onclick` idiom. In `tool-prv-validator` this pattern grew into three call
-sites that referenced the function by its *DOM `onclick` attribute string* —
+sites that referenced the function by its _DOM `onclick` attribute string_ —
 `document.querySelector("button[onclick='window.helloWorld()']")`. Renames break
 silently. Fix it once in the template and everyone scaffolded from it inherits the
 better pattern.
@@ -131,7 +131,7 @@ better pattern.
 ```
 
 Webpack 5 supports `module.exports` returning a Promise. Awaiting `initialize()`
-guarantees the dev-server proxy has the JSESSIONID cookie *before* the first
+guarantees the dev-server proxy has the JSESSIONID cookie _before_ the first
 request arrives. As-is, the first few proxied requests log "No cookie found" until
 the fetch resolves — harmless in most cases, but a real race if the user clicks
 fast enough.
@@ -192,7 +192,7 @@ Node's HTTP API), so only `fetchSessionCookie` needs the change.
 
 If DHIS2 ever cuts a 3.x line, `3.0.0` would have `minor = 0 < 42` and the legacy
 header bar would re-load. And on garbage input, `parseInt("abc", 10) → NaN`, which
-makes `NaN < 42` evaluate to `false` — *opposite* of the `catch` branch's
+makes `NaN < 42` evaluate to `false` — _opposite_ of the `catch` branch's
 "unknown version → load legacy" behaviour. Both small, both worth fixing once.
 
 ### 7. `validateUID` ignores query strings
@@ -229,6 +229,7 @@ tests/playwright/
 ```
 
 `common.py` only needs:
+
 ```python
 import json, os, urllib.request
 
