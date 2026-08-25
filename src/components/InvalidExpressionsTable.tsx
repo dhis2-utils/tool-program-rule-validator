@@ -8,6 +8,7 @@ import {
     DataTableColumnHeader,
     DataTableHead,
     DataTableRow,
+    IconLaunch16,
 } from '@dhis2/ui'
 import React from 'react'
 import type { InvalidExpression } from '@/types'
@@ -69,10 +70,17 @@ export const InvalidExpressionsTable = ({
                             <DataTableCell>
                                 <Button
                                     small
+                                    // The icon and the title flag that this
+                                    // leaves the app for a new tab.
+                                    icon={<IconLaunch16 />}
+                                    title={i18n.t(
+                                        'Opens the Maintenance app in a new tab'
+                                    )}
                                     onClick={() =>
                                         window.open(
                                             maintenanceUrl(baseUrl, row.ruleId),
-                                            '_blank'
+                                            '_blank',
+                                            'noopener,noreferrer'
                                         )
                                     }
                                 >

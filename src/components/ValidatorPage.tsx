@@ -21,11 +21,17 @@ type TabKey = 'conditions' | 'actions' | 'unused'
 
 export const ValidatorPage = () => {
     const { programs, isLoading, error } = usePrograms()
-    const { state, start, cancel, removeUnusedVariables } = useValidation()
+    const { state, results, start, cancel, removeUnusedVariables } =
+        useValidation()
     const [selectedProgramIds, setSelectedProgramIds] = useState<string[]>([])
     const [activeTab, setActiveTab] = useState<TabKey>('conditions')
 
     const isRunning = state.status === 'running'
+    // Results from the last completed run stay on screen when a later run is
+    // cancelled or fails; they are hidden while a run is in progress so they
+    // can't be mistaken for its output.
+    const showResults = results !== null && !isRunning
+    const resultsAreStale = showResults && state.status !== 'done'
 
     if (isLoading) {
         return (
@@ -76,7 +82,7 @@ export const ValidatorPage = () => {
                             setSelectedProgramIds(selected)
                         }
                         disabled={isRunning}
-                        filterable={allPrograms.length > 10}
+                        filterable
                         clearable
                         inputWidth="400px"
                         dataTest="program-select"
@@ -132,6 +138,8 @@ export const ValidatorPage = () => {
                         {i18n.t(
                             'The validation run was cancelled before it completed.'
                         )}
+                        {resultsAreStale &&
+                            ` ${i18n.t('The results below are from the last completed run.')}`}
                     </NoticeBox>
                 </div>
             )}
@@ -140,11 +148,30 @@ export const ValidatorPage = () => {
                 <div className={styles.notice}>
                     <NoticeBox error title={i18n.t('Validation failed')}>
                         {state.message}
+                        {resultsAreStale &&
+                            ` ${i18n.t('The results below are from the last completed run.')}`}
                     </NoticeBox>
                 </div>
             )}
 
-            {state.status === 'done' && (
+            {showResults && results.unvalidatedExpressions > 0 && (
+                <div className={styles.notice}>
+                    <NoticeBox
+                        warning
+                        title={i18n.t(
+                            'Some expressions could not be validated'
+                        )}
+                        dataTest="unvalidated-expressions-warning"
+                    >
+                        {i18n.t(
+                            '{{total}} expression(s) could not be checked because the server did not answer. They are not listed as invalid — run the validation again to check them.',
+                            { total: results.unvalidatedExpressions }
+                        )}
+                    </NoticeBox>
+                </div>
+            )}
+
+            {showResults && (
                 <div data-test="validation-results">
                     <TabBar>
                         <Tab
@@ -153,7 +180,7 @@ export const ValidatorPage = () => {
                             dataTest="tab-invalid-conditions"
                         >
                             {i18n.t('Invalid conditions ({{total}})', {
-                                total: state.results.invalidConditions.length,
+                                total: results.invalidConditions.length,
                             })}
                         </Tab>
                         <Tab
@@ -162,7 +189,7 @@ export const ValidatorPage = () => {
                             dataTest="tab-invalid-actions"
                         >
                             {i18n.t('Invalid actions ({{total}})', {
-                                total: state.results.invalidActions.length,
+                                total: results.invalidActions.length,
                             })}
                         </Tab>
                         <Tab
@@ -171,14 +198,14 @@ export const ValidatorPage = () => {
                             dataTest="tab-unused-variables"
                         >
                             {i18n.t('Unused program variables ({{total}})', {
-                                total: state.results.unusedVariables.length,
+                                total: results.unusedVariables.length,
                             })}
                         </Tab>
                     </TabBar>
                     <div className={styles.tabContent}>
                         {activeTab === 'conditions' && (
                             <InvalidExpressionsTable
-                                rows={state.results.invalidConditions}
+                                rows={results.invalidConditions}
                                 messageHeader={i18n.t(
                                     'Invalid condition expression'
                                 )}
@@ -190,7 +217,7 @@ export const ValidatorPage = () => {
                         )}
                         {activeTab === 'actions' && (
                             <InvalidExpressionsTable
-                                rows={state.results.invalidActions}
+                                rows={results.invalidActions}
                                 messageHeader={i18n.t(
                                     'Invalid action expression'
                                 )}
@@ -202,8 +229,8 @@ export const ValidatorPage = () => {
                         )}
                         {activeTab === 'unused' && (
                             <UnusedVariablesTab
-                                variables={state.results.unusedVariables}
-                                programs={state.results.validatedPrograms}
+                                variables={results.unusedVariables}
+                                programs={results.validatedPrograms}
                                 onDeleted={removeUnusedVariables}
                             />
                         )}

@@ -41,4 +41,10 @@ export type ValidationResults = {
     invalidConditions: InvalidExpression[]
     invalidActions: InvalidExpression[]
     unusedVariables: UnusedVariable[]
+    /**
+     * Expressions the server could not give a verdict on because the request
+     * failed or errored. They are counted rather than listed as invalid, so a
+     * transient server problem is never mistaken for a broken rule.
+     */
+    unvalidatedExpressions: number
 }

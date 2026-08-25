@@ -17,7 +17,7 @@ const RULE_CONCURRENCY = 10
 export type ValidationState =
     | { status: 'idle' }
     | { status: 'running'; progress: number }
-    | { status: 'done'; results: ValidationResults }
+    | { status: 'done' }
     | { status: 'cancelled' }
     | { status: 'error'; message: string }
 
@@ -32,6 +32,8 @@ type RuleResult = {
     rule: ProgramRule
     invalidConditionExpressions: string[]
     invalidActionExpressions: string[]
+    /** Expressions the server could not be asked for a verdict on. */
+    unvalidatedExpressions: number
     usedVariableNames: Set<string>
 }
 
@@ -40,8 +42,12 @@ const isAbortError = (error: unknown): boolean =>
 
 export const useValidation = () => {
     const engine = useDataEngine()
-    const { baseUrl } = useConfig()
+    const { baseUrl, apiVersion } = useConfig()
     const [state, setState] = useState<ValidationState>({ status: 'idle' })
+    // Results are held separately from the run status so that cancelling or
+    // failing a later run leaves the last completed run's results in place,
+    // rather than forcing the user to validate everything again.
+    const [results, setResults] = useState<ValidationResults | null>(null)
     const controllerRef = useRef<AbortController | null>(null)
 
     const cancel = useCallback(() => {
@@ -51,18 +57,13 @@ export const useValidation = () => {
     /** Remove deleted variables from the current results. */
     const removeUnusedVariables = useCallback((variableIds: string[]) => {
         const removed = new Set(variableIds)
-        setState((current) =>
-            current.status === 'done'
+        setResults((current) =>
+            current
                 ? {
                       ...current,
-                      results: {
-                          ...current.results,
-                          unusedVariables:
-                              current.results.unusedVariables.filter(
-                                  (variable) =>
-                                      !removed.has(variable.variableId)
-                              ),
-                      },
+                      unusedVariables: current.unusedVariables.filter(
+                          (variable) => !removed.has(variable.variableId)
+                      ),
                   }
                 : current
         )
@@ -83,6 +84,7 @@ export const useValidation = () => {
             const usedVariableNames = new Set<string>()
             const invalidConditionExpressions: string[] = []
             const invalidActionExpressions: string[] = []
+            let unvalidatedExpressions = 0
 
             if (rule.condition) {
                 collectUsedVariableNames(
@@ -90,15 +92,19 @@ export const useValidation = () => {
                     [rule.condition],
                     [rule.condition]
                 ).forEach((name) => usedVariableNames.add(name))
-                const error = await describeExpression({
+                const result = await describeExpression({
                     baseUrl,
+                    apiVersion,
                     path: `programRules/condition/description?programId=${program.id}`,
                     expression: rule.condition,
-                    fallbackErrorMessage: i18n.t('Condition validation error'),
                     signal,
                 })
-                if (error) {
-                    invalidConditionExpressions.push(error)
+                if (result.status === 'invalid') {
+                    invalidConditionExpressions.push(
+                        result.message || i18n.t('Condition validation error')
+                    )
+                } else if (result.status === 'unavailable') {
+                    unvalidatedExpressions++
                 }
             }
 
@@ -108,17 +114,20 @@ export const useValidation = () => {
                     (name) => usedVariableNames.add(name)
                 )
                 if (action.data) {
-                    const error = await describeExpression({
+                    const result = await describeExpression({
                         baseUrl,
+                        apiVersion,
                         path: `programRuleActions/data/expression/description?programId=${program.id}`,
                         expression: action.data,
-                        fallbackErrorMessage: i18n.t(
-                            'Action expression validation error'
-                        ),
                         signal,
                     })
-                    if (error) {
-                        invalidActionExpressions.push(error)
+                    if (result.status === 'invalid') {
+                        invalidActionExpressions.push(
+                            result.message ||
+                                i18n.t('Action expression validation error')
+                        )
+                    } else if (result.status === 'unavailable') {
+                        unvalidatedExpressions++
                     }
                 }
             }
@@ -128,10 +137,11 @@ export const useValidation = () => {
                 rule,
                 invalidConditionExpressions,
                 invalidActionExpressions,
+                unvalidatedExpressions,
                 usedVariableNames,
             }
         },
-        [baseUrl]
+        [baseUrl, apiVersion]
     )
 
     const start = useCallback(
@@ -227,11 +237,14 @@ export const useValidation = () => {
                     invalidConditions: [],
                     invalidActions: [],
                     unusedVariables: [],
+                    unvalidatedExpressions: 0,
                 }
 
                 const usedByProgramId = new Map<string, Set<string>>()
                 for (const ruleResult of ruleResults) {
                     const { program, rule } = ruleResult
+                    results.unvalidatedExpressions +=
+                        ruleResult.unvalidatedExpressions
                     let used = usedByProgramId.get(program.id)
                     if (!used) {
                         used = new Set<string>()
@@ -275,7 +288,8 @@ export const useValidation = () => {
                     }
                 }
 
-                setState({ status: 'done', results })
+                setResults(results)
+                setState({ status: 'done' })
             } catch (error) {
                 if (isAbortError(error) || signal.aborted) {
                     setState({ status: 'cancelled' })
@@ -296,5 +310,5 @@ export const useValidation = () => {
         [engine, processRule]
     )
 
-    return { state, start, cancel, removeUnusedVariables }
+    return { state, results, start, cancel, removeUnusedVariables }
 }

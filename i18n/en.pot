@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-07-11T11:03:07.990Z\n"
-"PO-Revision-Date: 2026-07-11T11:03:07.990Z\n"
+"POT-Creation-Date: 2026-08-25T16:28:47.598Z\n"
+"PO-Revision-Date: 2026-08-25T16:28:47.603Z\n"
 
 msgid "Delete 1 unused variable?"
 msgstr "Delete 1 unused variable?"
@@ -35,6 +35,9 @@ msgstr "Program rule ID"
 msgid "Action"
 msgstr "Action"
 
+msgid "Opens the Maintenance app in a new tab"
+msgstr "Opens the Maintenance app in a new tab"
+
 msgid "Open in Maintenance"
 msgstr "Open in Maintenance"
 
@@ -56,6 +59,9 @@ msgstr "Filter by program"
 msgid "All programs"
 msgstr "All programs"
 
+msgid "Select all unused program rule variables"
+msgstr "Select all unused program rule variables"
+
 msgid "Program rule variable name"
 msgstr "Program rule variable name"
 
@@ -64,6 +70,9 @@ msgstr "Program rule variable ID"
 
 msgid "No unused program rule variables found."
 msgstr "No unused program rule variables found."
+
+msgid "Select {{name}}"
+msgstr "Select {{name}}"
 
 msgid "Delete selected"
 msgstr "Delete selected"
@@ -102,8 +111,23 @@ msgstr "Validation cancelled"
 msgid "The validation run was cancelled before it completed."
 msgstr "The validation run was cancelled before it completed."
 
+msgid "The results below are from the last completed run."
+msgstr "The results below are from the last completed run."
+
 msgid "Validation failed"
 msgstr "Validation failed"
+
+msgid "Some expressions could not be validated"
+msgstr "Some expressions could not be validated"
+
+msgid ""
+"{{total}} expression(s) could not be checked because the server did not "
+"answer. They are not listed as invalid — run the validation again to check "
+"them."
+msgstr ""
+"{{total}} expression(s) could not be checked because the server did not "
+"answer. They are not listed as invalid — run the validation again to check "
+"them."
 
 msgid "Invalid conditions ({{total}})"
 msgstr "Invalid conditions ({{total}})"

@@ -142,7 +142,7 @@ export const UnusedVariablesTab = ({
                     placeholder={i18n.t('All programs')}
                     selected={filterProgramIds}
                     onChange={onFilterChange}
-                    filterable={programs.length > 10}
+                    filterable
                     clearable
                     dense
                     inputWidth="400px"
@@ -167,6 +167,13 @@ export const UnusedVariablesTab = ({
                                 indeterminate={someSelected}
                                 onChange={({ checked }) => toggleAll(checked)}
                                 disabled={filteredVariables.length === 0}
+                                label={
+                                    <span className={styles.visuallyHidden}>
+                                        {i18n.t(
+                                            'Select all unused program rule variables'
+                                        )}
+                                    </span>
+                                }
                                 dataTest="select-all-checkbox"
                             />
                         </DataTableColumnHeader>
@@ -203,6 +210,17 @@ export const UnusedVariablesTab = ({
                                                 variable.variableId,
                                                 checked
                                             )
+                                        }
+                                        label={
+                                            <span
+                                                className={
+                                                    styles.visuallyHidden
+                                                }
+                                            >
+                                                {i18n.t('Select {{name}}', {
+                                                    name: variable.variableName,
+                                                })}
+                                            </span>
                                         }
                                         dataTest="variable-checkbox"
                                     />
