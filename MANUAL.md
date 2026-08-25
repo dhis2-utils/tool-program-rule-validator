@@ -53,7 +53,15 @@ This tool validates program rules and program rule variables in DHIS2, identifyi
 
 #### Viewing Results
 
-The result tabs appear once a validation run completes.
+The result tabs appear once a validation run completes. If you then start
+another run and cancel it, or it fails, the results from the last completed
+run stay on screen rather than being cleared.
+
+If the server could not be reached for some expressions — a timeout, a server
+error, or a rate-limit response — those expressions are retried, and any that
+still go unanswered are reported in a warning above the tabs. They are not
+listed as invalid, so a temporary server problem is never mistaken for a
+broken rule. Run the validation again to check them.
 
 1. **Invalid Conditions:**
     - The "Invalid conditions" tab lists program rules with invalid condition expressions.

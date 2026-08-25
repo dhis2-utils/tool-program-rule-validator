@@ -2,7 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0 — 2026-07-11
+## 1.0.0 — 2026-08-25
+
+### Fixed
+
+- Transient server failures are no longer reported as invalid expressions.
+  A 5xx, a rate-limit response or a dropped connection used to produce a
+  generic "Condition validation error" row, indistinguishable from a real
+  problem with the rule. Such requests are now retried with a short
+  backoff, and anything still unanswered is counted and surfaced as a
+  run-level warning instead of being listed as invalid.
+- The expression-description requests now send the `X-Requested-With` and
+  `Accept` headers that the data engine sends on every other request, so
+  an expired session can no longer trigger the browser's native
+  basic-auth dialog.
+- The expression-description requests now use the same API version as the
+  rest of the app (the engine defaults it to the server's own version)
+  rather than always hitting the unversioned `/api/` path.
+- Results from the last completed run stay on screen when a subsequent
+  run is cancelled or fails, instead of being discarded.
+- Selection checkboxes in the unused-variables table have accessible
+  names, and "Open in Maintenance" shows that it opens a new tab.
+- The program pickers always offer a search box, matching the original
+  tool, rather than only above ten programs.
 
 ### Changed
 
