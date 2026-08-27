@@ -1,23 +1,16 @@
-import { useConfig } from '@dhis2/app-runtime'
 import i18n from '@dhis2/d2-i18n'
 import {
-    Button,
     DataTable,
     DataTableBody,
     DataTableCell,
     DataTableColumnHeader,
     DataTableHead,
     DataTableRow,
-    IconLaunch16,
 } from '@dhis2/ui'
 import React from 'react'
+import { EditInAppButton } from '@/components/EditInAppButton'
+import { useMetadataAppLink } from '@/hooks/useMetadataAppLink'
 import type { InvalidExpression } from '@/types'
-
-const maintenanceUrl = (baseUrl: string, ruleId: string): string =>
-    new URL(
-        `${baseUrl}/dhis-web-maintenance/index.html#/edit/programSection/programRule/${ruleId}`,
-        window.location.href
-    ).href
 
 export const InvalidExpressionsTable = ({
     rows,
@@ -30,7 +23,7 @@ export const InvalidExpressionsTable = ({
     emptyMessage: string
     dataTest: string
 }) => {
-    const { baseUrl } = useConfig()
+    const { target, objectUrl, isLoading } = useMetadataAppLink()
 
     return (
         <DataTable dataTest={dataTest}>
@@ -68,24 +61,15 @@ export const InvalidExpressionsTable = ({
                             <DataTableCell>{row.ruleId}</DataTableCell>
                             <DataTableCell>{row.message}</DataTableCell>
                             <DataTableCell>
-                                <Button
-                                    small
-                                    // The icon and the title flag that this
-                                    // leaves the app for a new tab.
-                                    icon={<IconLaunch16 />}
-                                    title={i18n.t(
-                                        'Opens the Maintenance app in a new tab'
-                                    )}
-                                    onClick={() =>
-                                        window.open(
-                                            maintenanceUrl(baseUrl, row.ruleId),
-                                            '_blank',
-                                            'noopener,noreferrer'
-                                        )
-                                    }
-                                >
-                                    {i18n.t('Open in Maintenance')}
-                                </Button>
+                                {!isLoading && (
+                                    <EditInAppButton
+                                        target={target}
+                                        url={objectUrl(
+                                            'programRule',
+                                            row.ruleId
+                                        )}
+                                    />
+                                )}
                             </DataTableCell>
                         </DataTableRow>
                     ))

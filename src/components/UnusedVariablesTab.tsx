@@ -15,7 +15,9 @@ import {
 import React, { useMemo, useState } from 'react'
 import styles from './UnusedVariablesTab.module.css'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
+import { EditInAppButton } from '@/components/EditInAppButton'
 import { useDeleteVariables } from '@/hooks/useDeleteVariables'
+import { useMetadataAppLink } from '@/hooks/useMetadataAppLink'
 import type { Program, UnusedVariable } from '@/types'
 
 export const UnusedVariablesTab = ({
@@ -30,6 +32,11 @@ export const UnusedVariablesTab = ({
     const [filterProgramIds, setFilterProgramIds] = useState<string[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [showConfirmModal, setShowConfirmModal] = useState(false)
+    const {
+        target: linkTarget,
+        objectUrl,
+        isLoading: linkLoading,
+    } = useMetadataAppLink()
 
     const { show: showAlert } = useAlert(
         ({ message }) => message,
@@ -186,12 +193,15 @@ export const UnusedVariablesTab = ({
                         <DataTableColumnHeader>
                             {i18n.t('Program rule variable ID')}
                         </DataTableColumnHeader>
+                        <DataTableColumnHeader>
+                            {i18n.t('Action')}
+                        </DataTableColumnHeader>
                     </DataTableRow>
                 </DataTableHead>
                 <DataTableBody>
                     {filteredVariables.length === 0 ? (
                         <DataTableRow>
-                            <DataTableCell colSpan="4">
+                            <DataTableCell colSpan="5">
                                 {i18n.t(
                                     'No unused program rule variables found.'
                                 )}
@@ -233,6 +243,17 @@ export const UnusedVariablesTab = ({
                                 </DataTableCell>
                                 <DataTableCell>
                                     {variable.variableId}
+                                </DataTableCell>
+                                <DataTableCell>
+                                    {!linkLoading && (
+                                        <EditInAppButton
+                                            target={linkTarget}
+                                            url={objectUrl(
+                                                'programRuleVariable',
+                                                variable.variableId
+                                            )}
+                                        />
+                                    )}
                                 </DataTableCell>
                             </DataTableRow>
                         ))

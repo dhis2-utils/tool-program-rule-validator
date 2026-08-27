@@ -69,6 +69,11 @@ broken rule. Run the validation again to check them.
 2. **Invalid Actions:**
     - The "Invalid actions" tab lists program rule actions with invalid expressions.
 
+Each results row links to the app where the object can be edited —
+the Metadata Management app when it is available to you, otherwise the
+Maintenance app. The link opens in a new tab. If you have neither app,
+no link is shown.
+
 3. **Unused Variables:**
     - The "Unused program variables" tab displays a table of program rule variables not used in any program rules.
     - Use the "Filter by program" dropdown to filter variables by selected programs.

@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0 — 2026-08-25
+## 1.0.0 — 2026-08-27
+
+### Added
+
+- Results rows link to the **Metadata Management** app when it is
+  installed and the user may open it, falling back to Maintenance
+  otherwise. Metadata Management is installable from the App Hub on
+  2.41 and bundled from 2.42, so which app to use is resolved at
+  runtime from `apps/menu`, which lists only apps the user may open.
+  When the user has neither app the link is omitted rather than
+  offering a dead end.
+- Unused program rule variables link out for editing too; previously
+  only invalid expressions did.
 
 ### Fixed
 

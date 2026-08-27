@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-08-25T16:28:47.598Z\n"
-"PO-Revision-Date: 2026-08-25T16:28:47.603Z\n"
+"POT-Creation-Date: 2026-08-27T11:15:01.349Z\n"
+"PO-Revision-Date: 2026-08-27T11:15:01.350Z\n"
 
 msgid "Delete 1 unused variable?"
 msgstr "Delete 1 unused variable?"
@@ -23,6 +23,18 @@ msgstr "Cancel"
 msgid "Delete"
 msgstr "Delete"
 
+msgid "Opens the Metadata Management app in a new tab"
+msgstr "Opens the Metadata Management app in a new tab"
+
+msgid "Opens the Maintenance app in a new tab"
+msgstr "Opens the Maintenance app in a new tab"
+
+msgid "Open in Metadata Management"
+msgstr "Open in Metadata Management"
+
+msgid "Open in Maintenance"
+msgstr "Open in Maintenance"
+
 msgid "Program"
 msgstr "Program"
 
@@ -34,12 +46,6 @@ msgstr "Program rule ID"
 
 msgid "Action"
 msgstr "Action"
-
-msgid "Opens the Maintenance app in a new tab"
-msgstr "Opens the Maintenance app in a new tab"
-
-msgid "Open in Maintenance"
-msgstr "Open in Maintenance"
 
 msgid "Deleted 1 variable."
 msgstr "Deleted 1 variable."
