@@ -1,6 +1,6 @@
 # Version/database test matrix: Program Rule Validator 1.0.0
 
-Tested: 2026-08-27 · Bundle: `tool-pr-validator-1.0.0.zip` (branch `app-platform`, commit `c5c8ef26`) installed via `POST /api/apps` and driven with Playwright · Auth: `local_admin`
+Tested: 2026-08-27, re-run 2026-08-28 after the link-out fix (`1f153b15`) · Bundle: `tool-pr-validator-1.0.0.zip` (branch `app-platform`, commit `c5c8ef26`) installed via `POST /api/apps` and driven with Playwright · Auth: `local_admin`
 
 Each version was paired with a database whose seed is native to it, so no
 Flyway cross-version migration was involved in any cell.
@@ -50,20 +50,32 @@ and still lands on the object's edit screen.
 ## Link-out target per version
 
 The link target is resolved at runtime from `GET /api/apps/menu`, which lists
-only apps the user may open. The test asserts the button label matches what
-that endpoint reports, rather than a hardcoded expectation.
+only apps the user may open. The test asserts the button label and tooltip match
+what that endpoint reports, rather than a hardcoded expectation.
 
-**The Metadata Management app is not bundled in 2.42.6 or 2.43.1.** Enumerating
-every bundled app on both instances shows Maintenance present
-(`maintenance 32.34.1-v42.0` on 2.42) and `metadata-management` absent. All
-three instances therefore resolved to Maintenance, which is the designed
-fallback. The Metadata Management branch was verified separately on a 2.41
-instance with the app installed from the App Hub, together with the
-"neither app available" branch — see the commit message for `c5c8ef26`.
+| Version  | Metadata Management                | Link target resolved |
+| -------- | ---------------------------------- | -------------------- |
+| 2.41.9.1 | not present (App Hub install only) | Maintenance          |
+| 2.42.6   | **not bundled**                    | Maintenance          |
+| 2.43.1   | **bundled**, v0.166.1              | Metadata Management  |
 
-Practical consequence: on a stock 2.42/2.43 instance users get Maintenance
-links. Metadata Management links appear only where it has been installed
-explicitly.
+Metadata Management is bundled in **2.43 but not 2.42**. The first run of this
+matrix reported it absent on both, which was wrong for 2.43: `/api/apps` was
+queried moments after boot while bundled apps were still registering, and
+returned 29 apps where the settled instance returns 31. Let an instance settle
+before treating its app list as complete.
+
+2.42.6 was re-checked on a fresh instance after it had fully settled and is
+genuinely without the app: 29 apps, 27 menu modules, no metadata entry, and
+`/apps/metadata-management` renders the global shell's "Unable to find an app
+for this URL". On 2.43.1 the same URL opens the app.
+
+Finding that wrong reading also exposed two real defects, fixed in `1f153b15`:
+the bundled app is listed in `apps/menu` as `dhis-web-metadata-management`
+rather than `metadata-management`, and it is served from
+`{base}/dhis-web-metadata-management/index.html` rather than
+`{base}/api/apps/metadata-management/index.html`. The app now matches both
+names and takes the launch URL from the menu instead of constructing it.
 
 ## Environment notes
 
