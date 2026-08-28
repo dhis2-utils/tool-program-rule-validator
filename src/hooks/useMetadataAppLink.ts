@@ -16,7 +16,8 @@ type AppsMenuResponse = {
  * Resolve where results rows should link to for editing.
  *
  * `apps/menu` lists only the apps the current user may open, so one query
- * answers both "is the app installed" and "may this user use it".
+ * answers both "is the app installed" and "may this user use it", and it
+ * reports each app's launch URL.
  */
 export const useMetadataAppLink = () => {
     const { baseUrl } = useConfig()
@@ -36,15 +37,21 @@ export const useMetadataAppLink = () => {
         select: (data) => data.modules,
     })
 
-    const target = pickLinkTarget(modules)
+    const resolution = pickLinkTarget(modules)
 
     const objectUrl = useCallback(
         (objectType: MetadataObjectType, id: string): string | null =>
-            target
-                ? metadataObjectUrl({ target, baseUrl, objectType, id })
+            resolution
+                ? metadataObjectUrl({
+                      target: resolution.target,
+                      launchUrl: resolution.launchUrl,
+                      baseUrl,
+                      objectType,
+                      id,
+                  })
                 : null,
-        [target, baseUrl]
+        [resolution, baseUrl]
     )
 
-    return { target, objectUrl, isLoading }
+    return { target: resolution?.target ?? null, objectUrl, isLoading }
 }
