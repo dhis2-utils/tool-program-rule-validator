@@ -1,6 +1,6 @@
 # Version/database test matrix: Program Rule Validator 1.0.0
 
-Tested: 2026-08-27, re-run 2026-08-28 after the link-out fix (`1f153b15`) · Bundle: `tool-pr-validator-1.0.0.zip` (branch `app-platform`, commit `c5c8ef26`) installed via `POST /api/apps` and driven with Playwright · Auth: `local_admin`
+Tested: 2026-08-27, re-run 2026-08-28 after the link-out fix · Bundle: `tool-pr-validator-1.0.0.zip` installed via `POST /api/apps` and driven with Playwright · Auth: `local_admin`
 
 Each version was paired with a database whose seed is native to it, so no
 Flyway cross-version migration was involved in any cell.
@@ -70,7 +70,7 @@ genuinely without the app: 29 apps, 27 menu modules, no metadata entry, and
 `/apps/metadata-management` renders the global shell's "Unable to find an app
 for this URL". On 2.43.1 the same URL opens the app.
 
-Finding that wrong reading also exposed two real defects, fixed in `1f153b15`:
+Finding that wrong reading also exposed two real defects, since fixed:
 the bundled app is listed in `apps/menu` as `dhis-web-metadata-management`
 rather than `metadata-management`, and it is served from
 `{base}/dhis-web-metadata-management/index.html` rather than

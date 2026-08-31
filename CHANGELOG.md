@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0 — 2026-08-27
+## 1.0.0 — 2026-08-28
 
 ### Added
 
@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 - Results from the last completed run stay on screen when a subsequent
   run is cancelled or fails, instead of being discarded.
 - Selection checkboxes in the unused-variables table have accessible
-  names, and "Open in Maintenance" shows that it opens a new tab.
+  names, and the link-out button shows that it opens a new tab.
 - The program pickers always offer a search box, matching the original
   tool, rather than only above ten programs.
 
