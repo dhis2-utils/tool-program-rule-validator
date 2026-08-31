@@ -8,6 +8,8 @@
  * fetchData sends.
  */
 
+import { trimSlashes } from './path'
+
 /** Outcome of asking the server to describe (validate) a single expression. */
 export type DescribeResult =
     /** The server accepted the expression. */
@@ -30,7 +32,7 @@ const RETRY_BASE_DELAY_MS = 300
 const joinPath = (...parts: (string | undefined)[]): string =>
     parts
         .filter((part): part is string => !!part)
-        .map((part) => part.replace(/^\/+|\/+$/g, ''))
+        .map(trimSlashes)
         .join('/')
 
 /**

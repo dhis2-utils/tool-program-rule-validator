@@ -17,6 +17,8 @@
  * only fall back to a constructed path when it is missing or unusable.
  */
 
+import { trimTrailingSlashes } from './path'
+
 export type LinkTarget = 'metadata-management' | 'maintenance'
 export type MetadataObjectType = 'programRule' | 'programRuleVariable'
 
@@ -108,7 +110,7 @@ export const metadataObjectUrl = ({
     // build from baseUrl instead.
     const appUrl = isAbsolute(launchUrl)
         ? launchUrl
-        : `${baseUrl.replace(/\/+$/, '')}/${FALLBACK_APP_PATH[target]}`
+        : `${trimTrailingSlashes(baseUrl)}/${FALLBACK_APP_PATH[target]}`
 
     const route =
         target === 'metadata-management'

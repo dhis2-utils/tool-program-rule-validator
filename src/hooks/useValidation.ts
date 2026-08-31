@@ -4,6 +4,11 @@ import pLimit from 'p-limit'
 import { useCallback, useRef, useState } from 'react'
 import { describeExpression } from '@/lib/expressionDescription'
 import { collectUsedVariableNames } from '@/lib/expressionUsage'
+import {
+    aggregateResults,
+    type ProgramData,
+    type RuleResult,
+} from '@/lib/validationResults'
 import type {
     Program,
     ProgramRule,
@@ -20,22 +25,6 @@ export type ValidationState =
     | { status: 'done' }
     | { status: 'cancelled' }
     | { status: 'error'; message: string }
-
-type ProgramData = {
-    program: Program
-    rules: ProgramRule[]
-    prvs: ProgramRuleVariable[]
-}
-
-type RuleResult = {
-    program: Program
-    rule: ProgramRule
-    invalidConditionExpressions: string[]
-    invalidActionExpressions: string[]
-    /** Expressions the server could not be asked for a verdict on. */
-    unvalidatedExpressions: number
-    usedVariableNames: Set<string>
-}
 
 const isAbortError = (error: unknown): boolean =>
     error instanceof Error && error.name === 'AbortError'
@@ -232,63 +221,9 @@ export const useValidation = () => {
                 )
 
                 // Phase 3: aggregate results, grouped by program
-                const results: ValidationResults = {
-                    validatedPrograms: programs,
-                    invalidConditions: [],
-                    invalidActions: [],
-                    unusedVariables: [],
-                    unvalidatedExpressions: 0,
-                }
-
-                const usedByProgramId = new Map<string, Set<string>>()
-                for (const ruleResult of ruleResults) {
-                    const { program, rule } = ruleResult
-                    results.unvalidatedExpressions +=
-                        ruleResult.unvalidatedExpressions
-                    let used = usedByProgramId.get(program.id)
-                    if (!used) {
-                        used = new Set<string>()
-                        usedByProgramId.set(program.id, used)
-                    }
-                    ruleResult.usedVariableNames.forEach((name) =>
-                        used?.add(name)
-                    )
-                    for (const message of ruleResult.invalidConditionExpressions) {
-                        results.invalidConditions.push({
-                            programId: program.id,
-                            programName: program.displayName,
-                            ruleId: rule.id,
-                            ruleName: rule.displayName,
-                            message,
-                        })
-                    }
-                    for (const message of ruleResult.invalidActionExpressions) {
-                        results.invalidActions.push({
-                            programId: program.id,
-                            programName: program.displayName,
-                            ruleId: rule.id,
-                            ruleName: rule.displayName,
-                            message,
-                        })
-                    }
-                }
-
-                for (const { program, prvs } of programData) {
-                    const used =
-                        usedByProgramId.get(program.id) ?? new Set<string>()
-                    for (const prv of prvs) {
-                        if (!used.has(prv.name)) {
-                            results.unusedVariables.push({
-                                programId: program.id,
-                                programName: program.displayName,
-                                variableId: prv.id,
-                                variableName: prv.displayName || prv.name,
-                            })
-                        }
-                    }
-                }
-
-                setResults(results)
+                setResults(
+                    aggregateResults({ programs, programData, ruleResults })
+                )
                 setState({ status: 'done' })
             } catch (error) {
                 if (isAbortError(error) || signal.aborted) {
