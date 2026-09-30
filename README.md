@@ -1,7 +1,9 @@
 # Program Rule Validator Tool
 
-Tool to validate program rules and program rule variables, identifying invalid program rules and unused variables. It allows bulk deletion of unused program rule variables.
-
+> ![Maturity: Validated](https://img.shields.io/badge/maturity-Validated-yellow)  
+> Intended use: validate program rule and program rules variables, identifying invalid program rules and unused variables, bulk deleting unused program rule variables.  
+> Maintainers: HISP Centre implementation team.
+>
 > **WARNING**
 > This tool is intended to be used by system administrators to perform specific tasks, it is not intended for end users. It is available as a DHIS2 app, but has not been through the same rigorous testing as normal core apps. It should be used with care, and always tested in a development environment.
 
