@@ -13,7 +13,7 @@ same flows pass on DHIS2 2.40, 2.41, 2.42 and 2.43.
 ## Prerequisites
 
 - A reachable DHIS2 instance and credentials (a superuser).
-- A built bundle: `pnpm build` (produces `build/bundle/tool-pr-validator-*.zip`).
+- A built bundle: `pnpm build` (produces `build/bundle/tool-program-rule-validator-*.zip`).
 - Python Playwright: `pip install playwright && playwright install chromium`.
 
 ## Run against one instance

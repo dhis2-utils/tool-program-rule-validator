@@ -1,5 +1,5 @@
 {
-    "name": "tool-pr-validator",
+    "name": "tool-program-rule-validator",
     "version": "1.0.0",
     "description": "Tool to validate program rules and program rule variables, identifying invalid program rules and unused variables.",
     "license": "BSD-3-Clause",

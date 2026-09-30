@@ -16,7 +16,7 @@ BASE = os.environ["DHIS2_URL"].rstrip("/")
 USER = os.environ.get("DHIS2_USER", "local_admin")
 PASSWORD = os.environ.get("DHIS2_PASS", "district")
 
-APP_KEY = "tool-pr-validator"
+APP_KEY = "tool-program-rule-validator"
 
 
 def _auth_header() -> str:

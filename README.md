@@ -47,4 +47,4 @@ pnpm test
 pnpm run build
 ```
 
-The installable app bundle is written to `build/bundle/tool-pr-validator-<version>.zip`, which can be installed in DHIS2 via App Management.
+The installable app bundle is written to `build/bundle/tool-program-rule-validator-<version>.zip`, which can be installed in DHIS2 via App Management.

@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0 — 2026-08-28
+## [1.0.0] - 2026-08-28
+
+### Upgrading from 0.x
+
+1.0.0 is installed under the app key `tool-program-rule-validator`, matching the
+repository name. The 0.x versions were installed under `tool-pr-validator`, so DHIS2
+treats 1.0.0 as a new app: after installing it, **uninstall the old "Program Rule
+Validator Tool" app** in the App Management app, or two entries remain in the app menu.
+Bookmarks to the old app URL stop working.
 
 ### Added
 
@@ -61,7 +69,7 @@ All notable changes to this project will be documented in this file.
   validated programs, and selections are pruned when the filter
   changes.
 - CI workflow builds with pnpm + `d2-app-scripts` and attaches
-  `build/bundle/tool-pr-validator-<version>.zip` to releases.
+  `build/bundle/tool-program-rule-validator-<version>.zip` to releases.
 - `minDHIS2Version` is 2.40.
 
 ### Removed
@@ -72,7 +80,7 @@ All notable changes to this project will be documented in this file.
 - The Python Playwright scripts under `tests/playwright/` (written for
   the old DOM); functional testing is now done against the platform UI.
 
-## 0.2.0 — 2026-04-28
+## [0.2.0] - 2026-04-28
 
 ### Added
 
