@@ -11,7 +11,7 @@ LABEL=${LABEL:?set LABEL}
 SCREENSHOT_DIR=${SCREENSHOT_DIR:-/tmp/prv-shots}
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
-ZIP=$(ls "$REPO_ROOT"/build/bundle/tool-pr-validator-*.zip | head -1)
+ZIP=$(ls "$REPO_ROOT"/build/bundle/tool-program-rule-validator-*.zip | head -1)
 echo "Installing $ZIP on $DHIS2_URL ..."
 code=$(curl -s -o /tmp/install-out.json -w "%{http_code}" -u "$DHIS2_USER:$DHIS2_PASS" \
     -F "file=@$ZIP" "$DHIS2_URL/api/apps")
@@ -30,6 +30,6 @@ set -e
 if [[ "${KEEP_APP:-0}" != "1" ]]; then
     echo "Uninstalling app ..."
     curl -s -o /dev/null -w "uninstall -> %{http_code}\n" -u "$DHIS2_USER:$DHIS2_PASS" \
-        -X DELETE "$DHIS2_URL/api/apps/tool-pr-validator"
+        -X DELETE "$DHIS2_URL/api/apps/tool-program-rule-validator"
 fi
 exit $suite_rc

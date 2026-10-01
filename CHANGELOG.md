@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0 — 2026-08-28
+## [1.0.1] - 2026-09-30
+
+### Changed
+
+- The app key is now `tool-program-rule-validator`, matching the repository name.
+  Earlier versions, including 1.0.0, were installed under `tool-pr-validator`, so DHIS2
+  treats 1.0.1 as a new app: after installing it, **uninstall the old "Program Rule
+  Validator Tool" app** in the App Management app, or two entries remain in the app
+  menu. Bookmarks to the old app URL stop working.
+
+## [1.0.0] - 2026-08-28
 
 ### Added
 
@@ -72,7 +82,7 @@ All notable changes to this project will be documented in this file.
 - The Python Playwright scripts under `tests/playwright/` (written for
   the old DOM); functional testing is now done against the platform UI.
 
-## 0.2.0 — 2026-04-28
+## [0.2.0] - 2026-04-28
 
 ### Added
 

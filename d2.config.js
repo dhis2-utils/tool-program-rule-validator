@@ -1,7 +1,7 @@
 /** @type {import('@dhis2/cli-app-scripts').D2Config} */
 const config = {
     type: 'app',
-    name: 'tool-pr-validator',
+    name: 'tool-program-rule-validator',
     title: 'Program Rule Validator Tool',
     description:
         'Tool to validate program rules and program rule variables, identifying invalid program rules and unused variables.',
