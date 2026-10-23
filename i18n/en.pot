@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-08-28T06:02:33.880Z\n"
-"PO-Revision-Date: 2026-08-28T06:02:33.882Z\n"
+"POT-Creation-Date: 2026-10-23T07:26:46.799Z\n"
+"PO-Revision-Date: 2026-10-23T07:26:46.799Z\n"
 
 msgid "Delete 1 unused variable?"
 msgstr "Delete 1 unused variable?"
@@ -80,6 +80,27 @@ msgstr "Select {{name}}"
 msgid "Delete selected"
 msgstr "Delete selected"
 
+msgid "Invalid conditions ({{total}})"
+msgstr "Invalid conditions ({{total}})"
+
+msgid "Invalid actions ({{total}})"
+msgstr "Invalid actions ({{total}})"
+
+msgid "Unused program variables ({{total}})"
+msgstr "Unused program variables ({{total}})"
+
+msgid "Invalid condition expression"
+msgstr "Invalid condition expression"
+
+msgid "No invalid program rule conditions found."
+msgstr "No invalid program rule conditions found."
+
+msgid "Invalid action expression"
+msgstr "Invalid action expression"
+
+msgid "No invalid program rule action expressions found."
+msgstr "No invalid program rule action expressions found."
+
 msgid "Error loading programs"
 msgstr "Error loading programs"
 
@@ -131,27 +152,6 @@ msgstr ""
 "{{total}} expression(s) could not be checked because the server did not "
 "answer. They are not listed as invalid — run the validation again to check "
 "them."
-
-msgid "Invalid conditions ({{total}})"
-msgstr "Invalid conditions ({{total}})"
-
-msgid "Invalid actions ({{total}})"
-msgstr "Invalid actions ({{total}})"
-
-msgid "Unused program variables ({{total}})"
-msgstr "Unused program variables ({{total}})"
-
-msgid "Invalid condition expression"
-msgstr "Invalid condition expression"
-
-msgid "No invalid program rule conditions found."
-msgstr "No invalid program rule conditions found."
-
-msgid "Invalid action expression"
-msgstr "Invalid action expression"
-
-msgid "No invalid program rule action expressions found."
-msgstr "No invalid program rule action expressions found."
 
 msgid "Condition validation error"
 msgstr "Condition validation error"

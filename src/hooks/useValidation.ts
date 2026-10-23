@@ -4,11 +4,8 @@ import pLimit from 'p-limit'
 import { useCallback, useRef, useState } from 'react'
 import { describeExpression } from '@/lib/expressionDescription'
 import { collectUsedVariableNames } from '@/lib/expressionUsage'
-import {
-    aggregateResults,
-    type ProgramData,
-    type RuleResult,
-} from '@/lib/validationResults'
+import { aggregateResults } from '@/lib/validationResults'
+import type { ProgramData, RuleResult } from '@/lib/validationResults'
 import type {
     Program,
     ProgramRule,
@@ -76,11 +73,9 @@ export const useValidation = () => {
             let unvalidatedExpressions = 0
 
             if (rule.condition) {
-                collectUsedVariableNames(
-                    prvNames,
-                    [rule.condition],
-                    [rule.condition]
-                ).forEach((name) => usedVariableNames.add(name))
+                collectUsedVariableNames(prvNames, [rule.condition]).forEach(
+                    (name) => usedVariableNames.add(name)
+                )
                 const result = await describeExpression({
                     baseUrl,
                     apiVersion,
@@ -99,10 +94,11 @@ export const useValidation = () => {
 
             for (const action of rule.programRuleActions ?? []) {
                 const texts = [action.content || '', action.data || '']
-                collectUsedVariableNames(prvNames, texts, texts).forEach(
-                    (name) => usedVariableNames.add(name)
+                collectUsedVariableNames(prvNames, texts).forEach((name) =>
+                    usedVariableNames.add(name)
                 )
                 if (action.data) {
+                    // oxlint-disable-next-line no-await-in-loop -- p-limit caps concurrency per rule, so a rule's actions stay sequential
                     const result = await describeExpression({
                         baseUrl,
                         apiVersion,

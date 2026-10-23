@@ -16,8 +16,82 @@ import { InvalidExpressionsTable } from '@/components/InvalidExpressionsTable'
 import { UnusedVariablesTab } from '@/components/UnusedVariablesTab'
 import { usePrograms } from '@/hooks/usePrograms'
 import { useValidation } from '@/hooks/useValidation'
+import type { ValidationResults } from '@/types'
 
 type TabKey = 'conditions' | 'actions' | 'unused'
+
+const ValidationResultsTabs = ({
+    results,
+    activeTab,
+    onTabChange,
+    onDeleted,
+}: {
+    results: ValidationResults
+    activeTab: TabKey
+    onTabChange: (tab: TabKey) => void
+    onDeleted: (ids: string[]) => void
+}) => (
+    <div data-test="validation-results">
+        <TabBar>
+            <Tab
+                selected={activeTab === 'conditions'}
+                onClick={() => onTabChange('conditions')}
+                dataTest="tab-invalid-conditions"
+            >
+                {i18n.t('Invalid conditions ({{total}})', {
+                    total: results.invalidConditions.length,
+                })}
+            </Tab>
+            <Tab
+                selected={activeTab === 'actions'}
+                onClick={() => onTabChange('actions')}
+                dataTest="tab-invalid-actions"
+            >
+                {i18n.t('Invalid actions ({{total}})', {
+                    total: results.invalidActions.length,
+                })}
+            </Tab>
+            <Tab
+                selected={activeTab === 'unused'}
+                onClick={() => onTabChange('unused')}
+                dataTest="tab-unused-variables"
+            >
+                {i18n.t('Unused program variables ({{total}})', {
+                    total: results.unusedVariables.length,
+                })}
+            </Tab>
+        </TabBar>
+        <div className={styles.tabContent}>
+            {activeTab === 'conditions' && (
+                <InvalidExpressionsTable
+                    rows={results.invalidConditions}
+                    messageHeader={i18n.t('Invalid condition expression')}
+                    emptyMessage={i18n.t(
+                        'No invalid program rule conditions found.'
+                    )}
+                    dataTest="invalid-conditions-table"
+                />
+            )}
+            {activeTab === 'actions' && (
+                <InvalidExpressionsTable
+                    rows={results.invalidActions}
+                    messageHeader={i18n.t('Invalid action expression')}
+                    emptyMessage={i18n.t(
+                        'No invalid program rule action expressions found.'
+                    )}
+                    dataTest="invalid-actions-table"
+                />
+            )}
+            {activeTab === 'unused' && (
+                <UnusedVariablesTab
+                    variables={results.unusedVariables}
+                    programs={results.validatedPrograms}
+                    onDeleted={onDeleted}
+                />
+            )}
+        </div>
+    </div>
+)
 
 export const ValidatorPage = () => {
     const { programs, isLoading, error } = usePrograms()
@@ -172,70 +246,12 @@ export const ValidatorPage = () => {
             )}
 
             {showResults && (
-                <div data-test="validation-results">
-                    <TabBar>
-                        <Tab
-                            selected={activeTab === 'conditions'}
-                            onClick={() => setActiveTab('conditions')}
-                            dataTest="tab-invalid-conditions"
-                        >
-                            {i18n.t('Invalid conditions ({{total}})', {
-                                total: results.invalidConditions.length,
-                            })}
-                        </Tab>
-                        <Tab
-                            selected={activeTab === 'actions'}
-                            onClick={() => setActiveTab('actions')}
-                            dataTest="tab-invalid-actions"
-                        >
-                            {i18n.t('Invalid actions ({{total}})', {
-                                total: results.invalidActions.length,
-                            })}
-                        </Tab>
-                        <Tab
-                            selected={activeTab === 'unused'}
-                            onClick={() => setActiveTab('unused')}
-                            dataTest="tab-unused-variables"
-                        >
-                            {i18n.t('Unused program variables ({{total}})', {
-                                total: results.unusedVariables.length,
-                            })}
-                        </Tab>
-                    </TabBar>
-                    <div className={styles.tabContent}>
-                        {activeTab === 'conditions' && (
-                            <InvalidExpressionsTable
-                                rows={results.invalidConditions}
-                                messageHeader={i18n.t(
-                                    'Invalid condition expression'
-                                )}
-                                emptyMessage={i18n.t(
-                                    'No invalid program rule conditions found.'
-                                )}
-                                dataTest="invalid-conditions-table"
-                            />
-                        )}
-                        {activeTab === 'actions' && (
-                            <InvalidExpressionsTable
-                                rows={results.invalidActions}
-                                messageHeader={i18n.t(
-                                    'Invalid action expression'
-                                )}
-                                emptyMessage={i18n.t(
-                                    'No invalid program rule action expressions found.'
-                                )}
-                                dataTest="invalid-actions-table"
-                            />
-                        )}
-                        {activeTab === 'unused' && (
-                            <UnusedVariablesTab
-                                variables={results.unusedVariables}
-                                programs={results.validatedPrograms}
-                                onDeleted={removeUnusedVariables}
-                            />
-                        )}
-                    </div>
-                </div>
+                <ValidationResultsTabs
+                    results={results}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    onDeleted={removeUnusedVariables}
+                />
             )}
         </div>
     )

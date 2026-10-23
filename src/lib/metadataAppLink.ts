@@ -23,13 +23,13 @@ export type LinkTarget = 'metadata-management' | 'maintenance'
 export type MetadataObjectType = 'programRule' | 'programRuleVariable'
 
 /** One entry of `GET /api/apps/menu`, which only lists apps the user may open. */
-export type MenuModule = {
+export interface MenuModule {
     name: string
     /** Absolute launch URL on current servers; older ones report a relative path. */
     defaultAction?: string
 }
 
-export type LinkResolution = {
+export interface LinkResolution {
     target: LinkTarget
     launchUrl?: string
 }

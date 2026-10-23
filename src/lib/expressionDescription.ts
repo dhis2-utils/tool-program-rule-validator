@@ -28,6 +28,9 @@ export type DescribeResult =
 const RETRY_ATTEMPTS = 2
 const RETRY_BASE_DELAY_MS = 300
 
+/** HTTP statuses that carry a validation verdict in the response body. */
+const VERDICT_HTTP_STATUSES = new Set([200, 409])
+
 /** Mirrors the engine's RestAPILink joinPath: strips separators between parts. */
 const joinPath = (...parts: (string | undefined)[]): string =>
     parts
@@ -60,11 +63,14 @@ const delay = (ms: number, signal?: AbortSignal): Promise<void> =>
             reject(abortError())
             return
         }
+        // The abort handler and the timer refer to each other; the holder lets
+        // the handler see the timer that is created after it.
+        const pending: { timer?: ReturnType<typeof setTimeout> } = {}
         const onAbort = () => {
-            clearTimeout(timer)
+            clearTimeout(pending.timer)
             reject(abortError())
         }
-        const timer = setTimeout(() => {
+        pending.timer = setTimeout(() => {
             signal?.removeEventListener('abort', onAbort)
             resolve()
         }, ms)
@@ -115,20 +121,25 @@ const describeOnce = async ({
         // Not JSON (an error page, an empty body) — handled by the checks below
     }
 
-    // DHIS2 reports a genuinely invalid expression with a `status: ERROR` body:
-    // HTTP 200 for conditions, HTTP 409 for action data expressions. Any other
-    // non-OK response is a transport or server failure, not a verdict on the
-    // expression, and must not be rendered as an invalid-expression row.
+    // DHIS2 reports a verdict in the body's `status`: OK for a valid
+    // expression, ERROR for an invalid one, with HTTP 200 for conditions and
+    // HTTP 409 for action data expressions. Every other response is a transport
+    // or server failure, not a verdict, and must not be rendered as a result
+    // row: a 500 or a 401 for an expired session also carries `status: ERROR`,
+    // and a login page or proxy page can come back as a 200 that is not JSON.
+    if (!VERDICT_HTTP_STATUSES.has(response.status)) {
+        return { status: 'unavailable' }
+    }
     if (data?.status === 'ERROR') {
         return {
             status: 'invalid',
             message: data.description || data.message || '',
         }
     }
-    if (!response.ok) {
-        return { status: 'unavailable' }
+    if (data?.status === 'OK') {
+        return { status: 'valid' }
     }
-    return { status: 'valid' }
+    return { status: 'unavailable' }
 }
 
 /**
@@ -157,12 +168,14 @@ export const describeExpression = async ({
     const url = apiUrl(baseUrl, path, apiVersion)
 
     for (let attempt = 0; ; attempt++) {
+        // oxlint-disable-next-line no-await-in-loop -- each retry depends on the previous attempt's outcome
         const result = await describeOnce({ url, expression, signal })
         if (result.status !== 'unavailable' || attempt >= retries) {
             return result
         }
         // Back off before retrying: an error under load is usually transient,
         // and retrying immediately would only add to the load that caused it.
+        // oxlint-disable-next-line no-await-in-loop -- backoff must finish before the next attempt
         await delay(RETRY_BASE_DELAY_MS * 2 ** attempt, signal)
     }
 }

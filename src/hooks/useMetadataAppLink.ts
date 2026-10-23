@@ -1,14 +1,10 @@
 import { useConfig } from '@dhis2/app-runtime'
 import { useCallback } from 'react'
-import {
-    metadataObjectUrl,
-    pickLinkTarget,
-    type MenuModule,
-    type MetadataObjectType,
-} from '@/lib/metadataAppLink'
+import { metadataObjectUrl, pickLinkTarget } from '@/lib/metadataAppLink'
+import type { MenuModule, MetadataObjectType } from '@/lib/metadataAppLink'
 import { useApiDataQuery } from '@/utils/useApiDataQuery'
 
-type AppsMenuResponse = {
+interface AppsMenuResponse {
     modules: MenuModule[]
 }
 

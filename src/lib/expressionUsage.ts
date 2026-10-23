@@ -2,53 +2,48 @@
  * Pure helpers for detecting program rule variable usage inside program
  * rule expressions (conditions, action data expressions and action content
  * templates).
+ *
+ * A variable reported as unused can be deleted from the app, and deleting a
+ * variable that a rule still needs breaks that rule. So the detection errs
+ * towards "used": a reference anywhere in the text counts, including inside
+ * a string literal, because some functions take an expression as a string
+ * (d2:countIfCondition) and action content is display text, not an
+ * expression.
  */
 
 /**
- * Remove quoted string literals from an expression so that variable
- * references inside literals (e.g. '#{foo}' as text) don't count as usage.
+ * Collect the contents of quoted string literals. Functions such as
+ * d2:hasValue, d2:count, d2:countIfValue, d2:countIfZeroPos, d2:maxValue,
+ * d2:minValue, d2:lastEventDate and d2:countIfCondition take a variable by
+ * its quoted name, so any literal that equals a variable name is a reference.
  */
-export const stripStringLiterals = (expression: string): string =>
-    expression.replaceAll(/(["'])(?:\\.|[^\\])*?\1/g, '')
-
-/**
- * Extract variable names referenced through d2:hasValue('name') calls.
- * These references live inside string literals, so they are collected
- * from the raw (unstripped) expression.
- */
-export const extractPrvsFromD2HasValue = (expression: string): string[] => {
-    const matches: string[] = []
-    const regex = /d2:hasValue\s*\(\s*["']([^"']+)["']\s*\)/g
-    let match
-    while ((match = regex.exec(expression)) !== null) {
-        matches.push(match[1])
+export const extractQuotedNames = (text: string): string[] => {
+    const names: string[] = []
+    const regex = /(["'])(.*?)\1/g
+    for (const match of text.matchAll(regex)) {
+        names.push(match[2].trim())
     }
-    return matches
+    return names
 }
 
 /**
  * Return the subset of `variableNames` that is referenced by any of the
- * given texts, either as #{name} / A{name} (outside string literals) or
- * via d2:hasValue('name') in `hasValueSources`.
+ * given texts, as #{name}, A{name}, or a quoted 'name' argument.
  */
 export const collectUsedVariableNames = (
     variableNames: string[],
-    texts: string[],
-    hasValueSources: string[]
+    texts: string[]
 ): Set<string> => {
     const used = new Set<string>()
-    const hasValuePrvs = new Set(
-        hasValueSources.flatMap(extractPrvsFromD2HasValue)
-    )
-    const cleanTexts = texts.map(stripStringLiterals)
+    const quotedNames = new Set(texts.flatMap(extractQuotedNames))
     for (const name of variableNames) {
         const curlyRef = `#{${name}}`
         const attributeRef = `A{${name}}`
         if (
-            cleanTexts.some(
+            quotedNames.has(name) ||
+            texts.some(
                 (text) => text.includes(curlyRef) || text.includes(attributeRef)
-            ) ||
-            hasValuePrvs.has(name)
+            )
         ) {
             used.add(name)
         }

@@ -2,7 +2,7 @@ import { useDataEngine } from '@dhis2/app-runtime'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
-export type DeletionOutcome = {
+export interface DeletionOutcome {
     deletedIds: string[]
     failedIds: string[]
 }
@@ -24,6 +24,7 @@ export const useDeleteVariables = ({
             const outcome: DeletionOutcome = { deletedIds: [], failedIds: [] }
             for (const id of variableIds) {
                 try {
+                    // oxlint-disable-next-line no-await-in-loop -- one delete at a time keeps the server load low and the outcome per id exact
                     await engine.mutate({
                         resource: 'programRuleVariables',
                         id,

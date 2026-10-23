@@ -1,8 +1,5 @@
-import {
-    metadataObjectUrl,
-    pickLinkTarget,
-    type MenuModule,
-} from './metadataAppLink'
+import { metadataObjectUrl, pickLinkTarget } from './metadataAppLink'
+import type { MenuModule } from './metadataAppLink'
 
 const mod = (name: string, defaultAction?: string): MenuModule => ({
     name,

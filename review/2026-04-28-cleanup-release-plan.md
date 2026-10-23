@@ -1148,7 +1148,7 @@ playwright install --with-deps chromium
 ```
 
 DHIS2_BASE_URL=http://localhost:9021 DHIS2_USER=claude DHIS2_PASSWORD=Test12345! \
- python3 tests/playwright/test_smoke.py
+python3 tests/playwright/test_smoke.py
 
 ```
 

@@ -7,16 +7,15 @@ const jsonResponse = (
     ({
         ok: status >= 200 && status < 300,
         status,
-        json: async () => body,
+        json: () => Promise.resolve(body),
     }) as Response
 
 const nonJsonResponse = ({ status }: { status: number }): Response =>
     ({
         ok: status >= 200 && status < 300,
         status,
-        json: async () => {
-            throw new SyntaxError('Unexpected token < in JSON')
-        },
+        json: () =>
+            Promise.reject(new SyntaxError('Unexpected token < in JSON')),
     }) as unknown as Response
 
 const mockFetch = (fetchImpl: jest.Mock) => {
@@ -177,15 +176,40 @@ describe('describeExpression', () => {
 
     it('reports an expired session (401) as unavailable', async () => {
         mockFetch(
-            jest
-                .fn()
-                .mockResolvedValue(
-                    jsonResponse(
-                        { httpStatus: 'Unauthorized', message: 'Unauthorized' },
-                        { status: 401 }
-                    )
+            jest.fn().mockResolvedValue(
+                jsonResponse(
+                    {
+                        httpStatus: 'Unauthorized',
+                        status: 'ERROR',
+                        message: 'Unauthorized',
+                    },
+                    { status: 401 }
                 )
+            )
         )
+
+        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+    })
+
+    it('reports a 500 with a status ERROR body as unavailable, not invalid', async () => {
+        mockFetch(
+            jest.fn().mockResolvedValue(
+                jsonResponse(
+                    {
+                        httpStatus: 'Internal Server Error',
+                        status: 'ERROR',
+                        message: 'Something went wrong',
+                    },
+                    { status: 500 }
+                )
+            )
+        )
+
+        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+    })
+
+    it('reports a 200 that is not a verdict (a login page) as unavailable, not valid', async () => {
+        mockFetch(jest.fn().mockResolvedValue(nonJsonResponse({ status: 200 })))
 
         await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
     })
@@ -257,9 +281,9 @@ describe('describeExpression', () => {
     it('aborts while backing off between retries', async () => {
         const controller = new AbortController()
         const fetchMock = mockFetch(
-            jest.fn().mockImplementation(async () => {
+            jest.fn().mockImplementation(() => {
                 controller.abort()
-                return nonJsonResponse({ status: 503 })
+                return Promise.resolve(nonJsonResponse({ status: 503 }))
             })
         )
 
