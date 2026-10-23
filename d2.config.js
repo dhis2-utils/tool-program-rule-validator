@@ -4,7 +4,7 @@ const config = {
     name: 'tool-program-rule-validator',
     title: 'Program Rule Validator Tool',
     description:
-        'Tool to validate program rules and program rule variables, identifying invalid program rules and unused variables.',
+        'Finds invalid program rule expressions and unused program rule variables, and deletes the unused variables.',
     minDHIS2Version: '2.40',
 
     entryPoints: {

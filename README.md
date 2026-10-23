@@ -1,50 +1,59 @@
 # Program Rule Validator Tool
 
 > ![Maturity: Validated](https://img.shields.io/badge/maturity-Validated-yellow)  
-> Intended use: validate program rule and program rules variables, identifying invalid program rules and unused variables, bulk deleting unused program rule variables.  
+> Intended use: find invalid program rule expressions and unused program rule variables, and bulk-delete the unused variables.  
 > Maintainers: HISP Centre implementation team.
->
-> **WARNING**
-> This tool is intended to be used by system administrators to perform specific tasks, it is not intended for end users. It is available as a DHIS2 app, but has not been through the same rigorous testing as normal core apps. It should be used with care, and always tested in a development environment.
 
-The app is built with the [DHIS2 App Platform](https://developers.dhis2.org/docs/app-platform/getting-started) (React, `@dhis2/app-runtime`, `@dhis2/ui`) and supports DHIS2 2.40 and later.
+> [!WARNING]
+> This tool is for system administrators, not end users. It deletes metadata, and it has not been through the testing of the DHIS2 core apps. Try it on a copy of your database before you use it on a production server.
 
-## License
+The tool checks every program rule condition and action expression with the server, lists the ones the server rejects, and lists program rule variables that no rule uses so you can delete them. The user documentation is in [docs/user/](docs/user/tool-program-rule-validator.md).
 
-© Copyright University of Oslo 2024
+## Supported DHIS2 versions
 
-## Getting started
+2.40 and later (`minDHIS2Version` in `d2.config.js`). The end-to-end suite runs on the last three DHIS2 majors.
 
-### Install dependencies
+## Development
 
-```
+The app is built with the [DHIS2 App Platform](https://developers.dhis2.org/docs/app-platform/getting-started) (React, TypeScript, `@dhis2/app-runtime`, `@dhis2/ui`).
+
+### Prerequisites
+
+- Node.js 22.
+- pnpm, in the version that `packageManager` in `package.json` names. Run `corepack enable` to get it.
+- A DHIS2 instance to develop against, for example a local one on port 8080. [DHIS2 in Docker](https://developers.dhis2.org/docs/tutorials/dhis2-docker/) explains how to start one.
+
+### Install the dependencies
+
+```bash
 pnpm install
 ```
 
-### Start the dev server
+### Start the app against a local instance
 
-```
+```bash
 pnpm start
 ```
 
-This starts the app on http://localhost:3000, connecting to a DHIS2 instance on http://localhost:8080 by default. To develop against a remote instance, use the built-in CORS proxy:
+The app runs on http://localhost:3000. Log in with the URL of your DHIS2 instance, such as http://localhost:8080, and its credentials. If the instance does not allow requests from localhost:3000, start the app with the built-in proxy instead, `pnpm start --proxy http://localhost:8080`, and log in with http://localhost:8080 as the server.
 
-```
-pnpm start --proxy https://play.im.dhis2.org/dev-2-43
-```
+### Test, lint and build
 
-Then log in with the instance credentials at the login screen (use http://localhost:8080 as the server URL when using the proxy).
-
-### Run tests
-
-```
-pnpm test
+```bash
+pnpm test                  # unit tests (Jest), next to the code as src/**/*.test.ts
+pnpm run lint              # Ultracite: Oxlint and the Oxfmt format check
+pnpm exec tsc --noEmit     # typecheck
+pnpm run build             # bundle in build/bundle/tool-program-rule-validator-<version>.zip
 ```
 
-### Build a deployable zip
+`pnpm run format` formats the code with Oxfmt. The lint setup follows [LINTING.md](https://github.com/dhis2-utils/reference-tool-conventions/blob/main/LINTING.md) of reference-tool-conventions; `AGENTS.md` sums up the house style for coding agents.
 
-```
-pnpm run build
-```
+The end-to-end suite in [e2e/](e2e/README.md) installs the bundle on a throwaway DHIS2 instance and drives the app in Chromium. It deletes data, so read its README before you run it.
 
-The installable app bundle is written to `build/bundle/tool-program-rule-validator-<version>.zip`, which can be installed in DHIS2 via App Management.
+### Release
+
+Bump `version` in `package.json`, add a section to `CHANGELOG.md`, merge to `main`, then push a `vX.Y.Z` tag. The release workflow builds the bundle and attaches it to a GitHub release. The full procedure is in [RELEASE-WORKFLOW.md](https://github.com/dhis2-utils/reference-tool-conventions/blob/main/RELEASE-WORKFLOW.md) of reference-tool-conventions.
+
+## License
+
+BSD-3-Clause. © University of Oslo 2024.

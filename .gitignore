@@ -7,6 +7,5 @@ build
 **/.DS_Store
 __pycache__/
 src/locales
-test-results
-playwright-report
 .pnpm-store
+e2e-results/

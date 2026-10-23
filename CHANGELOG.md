@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Variables that a rule used only as a quoted argument, as in `d2:count('name')`, `d2:countIfValue`, `d2:countIfZeroPos`, `d2:maxValue`, `d2:minValue` or `d2:lastEventDate`, were listed as unused, so the tool offered to delete variables that rules still needed. The same happened to variables used inside the condition string of `d2:countIfCondition`, and in action content that contained an apostrophe. A variable now counts as used when its name appears in a rule as `#{name}`, `A{name}` or `'name'`.
+- A server error or an expired session during a run was listed as an invalid expression, because DHIS2 sends `status: ERROR` in those responses too. Only the responses that carry a verdict (HTTP 200 and 409) are read as one now; anything else counts as "could not be validated".
+- A response that is not a verdict, such as a login page returned with HTTP 200, counted as a valid expression. It now counts as "could not be validated".
+
+### Changed
+
+- Linting and formatting moved from ESLint and Prettier to Ultracite on Oxlint and Oxfmt, over the DHIS2 house style.
+- The user documentation moved from `MANUAL.md` to `docs/user/`.
+- The end-to-end suite moved to `e2e/` and follows the shared `e2e/run.sh` contract. It now covers the fixes above.
+
 ## [1.0.1] - 2026-09-30
 
 ### Changed
