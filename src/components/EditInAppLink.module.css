@@ -1,0 +1,30 @@
+/* A link that looks like a small secondary @dhis2/ui button. */
+.link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacers-dp4);
+    block-size: 28px;
+    padding: 0 var(--spacers-dp8);
+    border: 1px solid var(--colors-grey500);
+    border-radius: 3px;
+    background-color: var(--colors-white);
+    color: var(--colors-grey900);
+    font-size: 14px;
+    line-height: 16px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.link:hover {
+    background-color: var(--colors-grey100);
+    border-color: var(--colors-grey600);
+}
+
+.link:focus-visible {
+    outline: 3px solid var(--theme-focus);
+    outline-offset: -3px;
+}
+
+.link svg {
+    fill: currentColor;
+}

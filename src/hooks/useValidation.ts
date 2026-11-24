@@ -4,11 +4,8 @@ import pLimit from 'p-limit'
 import { useCallback, useRef, useState } from 'react'
 import { describeExpression } from '@/lib/expressionDescription'
 import { collectUsedVariableNames } from '@/lib/expressionUsage'
-import {
-    aggregateResults,
-    type ProgramData,
-    type RuleResult,
-} from '@/lib/validationResults'
+import { aggregateResults } from '@/lib/validationResults'
+import type { ProgramData, RuleResult } from '@/lib/validationResults'
 import type {
     Program,
     ProgramRule,
@@ -29,6 +26,21 @@ export type ValidationState =
 const isAbortError = (error: unknown): boolean =>
     error instanceof Error && error.name === 'AbortError'
 
+/** Thrown when the server answers 401: the run cannot continue. */
+class SessionExpiredError extends Error {
+    constructor() {
+        super('Session expired')
+        this.name = 'SessionExpiredError'
+    }
+}
+
+const isSessionExpired = (error: unknown): boolean =>
+    error instanceof SessionExpiredError ||
+    // The data engine reports a 401 as an access error with this message.
+    (error instanceof Error &&
+        (error as Error & { type?: string }).type === 'access' &&
+        error.message === 'Unauthorized')
+
 export const useValidation = () => {
     const engine = useDataEngine()
     const { baseUrl, apiVersion } = useConfig()
@@ -37,6 +49,9 @@ export const useValidation = () => {
     // failing a later run leaves the last completed run's results in place,
     // rather than forcing the user to validate everything again.
     const [results, setResults] = useState<ValidationResults | null>(null)
+    // Changes with every completed run, so views can reset their own state
+    // (filters, ticked rows) for new results but keep it across deletions.
+    const [runId, setRunId] = useState(0)
     const controllerRef = useRef<AbortController | null>(null)
 
     const cancel = useCallback(() => {
@@ -76,11 +91,9 @@ export const useValidation = () => {
             let unvalidatedExpressions = 0
 
             if (rule.condition) {
-                collectUsedVariableNames(
-                    prvNames,
-                    [rule.condition],
-                    [rule.condition]
-                ).forEach((name) => usedVariableNames.add(name))
+                collectUsedVariableNames(prvNames, [rule.condition]).forEach(
+                    (name) => usedVariableNames.add(name)
+                )
                 const result = await describeExpression({
                     baseUrl,
                     apiVersion,
@@ -94,15 +107,18 @@ export const useValidation = () => {
                     )
                 } else if (result.status === 'unavailable') {
                     unvalidatedExpressions++
+                } else if (result.status === 'unauthorized') {
+                    throw new SessionExpiredError()
                 }
             }
 
             for (const action of rule.programRuleActions ?? []) {
                 const texts = [action.content || '', action.data || '']
-                collectUsedVariableNames(prvNames, texts, texts).forEach(
-                    (name) => usedVariableNames.add(name)
+                collectUsedVariableNames(prvNames, texts).forEach((name) =>
+                    usedVariableNames.add(name)
                 )
                 if (action.data) {
+                    // oxlint-disable-next-line no-await-in-loop -- one request per rule at a time; RULE_CONCURRENCY sets the parallelism
                     const result = await describeExpression({
                         baseUrl,
                         apiVersion,
@@ -117,6 +133,8 @@ export const useValidation = () => {
                         )
                     } else if (result.status === 'unavailable') {
                         unvalidatedExpressions++
+                    } else if (result.status === 'unauthorized') {
+                        throw new SessionExpiredError()
                     }
                 }
             }
@@ -224,8 +242,20 @@ export const useValidation = () => {
                 setResults(
                     aggregateResults({ programs, programData, ruleResults })
                 )
+                setRunId((id) => id + 1)
                 setState({ status: 'done' })
             } catch (error) {
+                if (isSessionExpired(error)) {
+                    // Stop the requests still queued or in flight.
+                    controller.abort()
+                    setState({
+                        status: 'error',
+                        message: i18n.t(
+                            'Your session has ended. Log in again, then run the validation again.'
+                        ),
+                    })
+                    return
+                }
                 if (isAbortError(error) || signal.aborted) {
                     setState({ status: 'cancelled' })
                     return
@@ -245,5 +275,5 @@ export const useValidation = () => {
         [engine, processRule]
     )
 
-    return { state, results, start, cancel, removeUnusedVariables }
+    return { state, results, runId, start, cancel, removeUnusedVariables }
 }

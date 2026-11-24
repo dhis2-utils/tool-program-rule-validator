@@ -42,6 +42,7 @@ describe('aggregateResults', () => {
                 programId: 'p1',
                 programName: 'Program p1',
                 variableId: 'v1',
+                name: 'unused_var',
                 variableName: 'unused_var',
             },
         ])
@@ -101,6 +102,7 @@ describe('aggregateResults', () => {
                 programId: 'p2',
                 programName: 'Program p2',
                 variableId: 'v2',
+                name: 'shared_name',
                 variableName: 'shared_name',
             },
         ])
@@ -159,5 +161,7 @@ describe('aggregateResults', () => {
         })
 
         expect(results.unusedVariables[0].variableName).toBe('Pretty')
+        // Rules reference the name, so that is what deletion re-checks.
+        expect(results.unusedVariables[0].name).toBe('raw')
     })
 })

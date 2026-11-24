@@ -23,3 +23,8 @@
     white-space: nowrap;
     border: 0;
 }
+
+.notice {
+    margin-block-end: var(--spacers-dp12);
+    max-inline-size: 600px;
+}

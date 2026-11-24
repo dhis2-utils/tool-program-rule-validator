@@ -1,77 +1,92 @@
 import {
     collectUsedVariableNames,
-    extractPrvsFromD2HasValue,
-    stripStringLiterals,
+    extractStringLiterals,
 } from './expressionUsage'
 
-describe('stripStringLiterals', () => {
-    it('removes double-quoted literals', () => {
-        expect(stripStringLiterals('#{age} > "#{fake}"')).toBe('#{age} > ')
-    })
-
-    it('removes single-quoted literals', () => {
-        expect(stripStringLiterals("d2:hasValue('foo') == true")).toBe(
-            'd2:hasValue() == true'
+describe('extractStringLiterals', () => {
+    it('reads single- and double-quoted literals', () => {
+        expect(extractStringLiterals(`d2:hasValue('a') && "b" == 'c'`)).toEqual(
+            ['a', 'b', 'c']
         )
     })
 
-    it('leaves expressions without literals untouched', () => {
-        expect(stripStringLiterals('#{age} > 5')).toBe('#{age} > 5')
-    })
-})
-
-describe('extractPrvsFromD2HasValue', () => {
-    it('extracts single-quoted variable names', () => {
-        expect(extractPrvsFromD2HasValue("d2:hasValue('age')")).toEqual(['age'])
-    })
-
-    it('extracts double-quoted variable names with whitespace', () => {
-        expect(extractPrvsFromD2HasValue('d2:hasValue ( "age" )')).toEqual([
-            'age',
-        ])
-    })
-
-    it('extracts multiple references', () => {
+    it('applies backslash escapes', () => {
         expect(
-            extractPrvsFromD2HasValue("d2:hasValue('a') && d2:hasValue('b')")
-        ).toEqual(['a', 'b'])
+            extractStringLiterals(String.raw`'it\'s' + "say \"hi\""`)
+        ).toEqual(["it's", 'say "hi"'])
     })
 
-    it('returns an empty array when there are no references', () => {
-        expect(extractPrvsFromD2HasValue('#{age} > 5')).toEqual([])
+    it('decodes \\u escapes', () => {
+        expect(extractStringLiterals("'\\u0061ge'")).toEqual(['age'])
+    })
+
+    it('keeps the other quote character inside a literal', () => {
+        expect(extractStringLiterals(`"it's"`)).toEqual(["it's"])
+    })
+
+    it('stops at an unterminated literal', () => {
+        expect(extractStringLiterals(`'a' + 'b`)).toEqual(['a'])
+    })
+
+    it('returns nothing for an expression without literals', () => {
+        expect(extractStringLiterals('#{age} > 5')).toEqual([])
     })
 })
 
 describe('collectUsedVariableNames', () => {
-    it('detects #{name} references', () => {
-        const used = collectUsedVariableNames(
-            ['age', 'sex'],
-            ['#{age} > 5'],
-            []
-        )
-        expect(used).toEqual(new Set(['age']))
+    const used = (texts: string[], names = ['v']) =>
+        collectUsedVariableNames(names, texts)
+
+    it('detects #{name}', () => {
+        expect(used(['#{v} > 5'])).toEqual(new Set(['v']))
     })
 
-    it('detects A{name} attribute references', () => {
-        const used = collectUsedVariableNames(['nid'], ['A{nid} != ""'], [])
-        expect(used).toEqual(new Set(['nid']))
+    it('detects A{name}', () => {
+        expect(used(['A{v} != ""'])).toEqual(new Set(['v']))
     })
 
-    it('detects d2:hasValue references from raw sources', () => {
-        const used = collectUsedVariableNames(
-            ['age'],
-            ["d2:hasValue('age')"],
-            ["d2:hasValue('age')"]
-        )
-        expect(used).toEqual(new Set(['age']))
+    // Every function whose argument the expression parser reads as a data
+    // item, so a quoted name is a reference (ExpressionGrammar.kt).
+    it.each([
+        "d2:hasValue('v')",
+        'd2:hasValue("v")',
+        "d2:count('v') > 0",
+        "d2:countIfValue('v', '1') > 0",
+        "d2:countIfZeroPos('v') > 0",
+        "d2:maxValue('v') > 0",
+        "d2:minValue('v') > 0",
+        "d2:lastEventDate('v') != ''",
+        "d2:hasValue ( 'v' )",
+    ])('detects a quoted name in %s', (expression) => {
+        expect(used([expression])).toEqual(new Set(['v']))
     })
 
-    it('ignores references inside string literals', () => {
-        const used = collectUsedVariableNames(
-            ['age'],
-            ['"#{age}" == "text"'],
-            []
+    it('detects #{name} inside the string argument of d2:condition', () => {
+        // d2:condition parses its first argument as a nested expression.
+        expect(used(["d2:condition('#{v} > 5', 1, 0)"])).toEqual(new Set(['v']))
+    })
+
+    it('detects a quoted name with escapes', () => {
+        expect(used([String.raw`d2:count('it\'s')`], ["it's"])).toEqual(
+            new Set(["it's"])
         )
-        expect(used).toEqual(new Set())
+    })
+
+    it('detects a reference in any of several texts', () => {
+        expect(used(['true', "d2:maxValue('v')"])).toEqual(new Set(['v']))
+    })
+
+    it('does not match a longer or shorter name', () => {
+        expect(
+            used(["#{value} > 0 && d2:count('va') > 0"], ['v', 'val'])
+        ).toEqual(new Set())
+    })
+
+    it('is case-sensitive', () => {
+        expect(used(["d2:count('V') > 0"])).toEqual(new Set())
+    })
+
+    it('reports nothing when no variable is referenced', () => {
+        expect(used(['V{event_date} != ""', '5 > 3'])).toEqual(new Set())
     })
 })

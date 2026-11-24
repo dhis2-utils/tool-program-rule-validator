@@ -11,7 +11,7 @@ import type {
     ValidationResults,
 } from '@/types'
 
-export type RuleResult = {
+export interface RuleResult {
     program: Program
     rule: ProgramRule
     invalidConditionExpressions: string[]
@@ -21,7 +21,7 @@ export type RuleResult = {
     usedVariableNames: Set<string>
 }
 
-export type ProgramData = {
+export interface ProgramData {
     program: Program
     rules: ProgramRule[]
     prvs: ProgramRuleVariable[]
@@ -97,6 +97,7 @@ export const aggregateResults = ({
                     programId: program.id,
                     programName: program.displayName,
                     variableId: prv.id,
+                    name: prv.name,
                     variableName: prv.displayName || prv.name,
                 })
             }

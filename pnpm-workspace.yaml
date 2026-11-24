@@ -8,7 +8,6 @@ publicHoistPattern:
     - '@dhis2/d2-i18n'
     - 'post-robot'
     - 'styled-jsx'
-    - '@dhis2/app-adapter'
     - '@dhis2/pwa'
 
 onlyBuiltDependencies:
