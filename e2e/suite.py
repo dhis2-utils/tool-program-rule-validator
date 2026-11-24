@@ -208,15 +208,32 @@ def step_validation_runs(run: Run, b: Browser, fx: fixtures.Fixture) -> None:
     b.shot(run, "01-results")
 
 
+def rule_suffixes(rows: list[str], fx: fixtures.Fixture) -> list[str]:
+    """The part of each listed rule name after the fixture prefix and run id."""
+    prefix = f"{fixtures.PREFIX} {fx.run_id} "
+    names = [row.split("\t")[1].strip() for row in rows if "\t" in row]
+    return sorted(name.removeprefix(prefix) for name in names)
+
+
 def step_invalid_listed(run: Run, b: Browser, fx: fixtures.Fixture) -> None:
     b.app.locator(TAB_CONDITIONS).click()
     rows = table_rows(b, CONDITIONS_TABLE, fx.program_name)
-    ok = len(rows) == 1 and "invalid condition" in rows[0]
-    run.record("invalid-condition-listed", ok, f"rows={[r[:90] for r in rows]}")
+    # Besides the invalid rule, expect the rules whose condition this
+    # server's parser rejects (DHIS2 v40 has no d2:condition, for example).
+    expected = sorted(
+        ["invalid condition", *(f"uses {s}" for s in fx.rejected_styles)]
+    )
+    listed = rule_suffixes(rows, fx)
+    run.record(
+        "invalid-condition-listed",
+        listed == expected,
+        f"listed={listed}, expected={expected}",
+    )
     b.app.locator(TAB_ACTIONS).click()
-    rows = table_rows(b, ACTIONS_TABLE, fx.program_name)
-    ok = len(rows) == 1 and "invalid action" in rows[0]
-    run.record("invalid-action-listed", ok, f"rows={[r[:90] for r in rows]}")
+    listed = rule_suffixes(table_rows(b, ACTIONS_TABLE, fx.program_name), fx)
+    run.record(
+        "invalid-action-listed", listed == ["invalid action"], f"listed={listed}"
+    )
 
 
 def step_unused_detection(run: Run, b: Browser, fx: fixtures.Fixture) -> None:

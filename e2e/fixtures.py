@@ -49,6 +49,9 @@ class Fixture:
     rule_invalid_condition: str = ""
     rule_invalid_action: str = ""
     rule_ids: list[str] = field(default_factory=list)
+    # Rules whose condition this server rejects although the suite meant it
+    # to be valid, by style. DHIS2 v40, for example, has no d2:condition.
+    rejected_styles: list[str] = field(default_factory=list)
 
     @property
     def missing_name(self) -> str:
@@ -99,6 +102,17 @@ def _import(payload: dict) -> None:
     body = (response or {}).get("response") or response or {}
     if status not in (200, 201) or body.get("status") not in ("OK", "SUCCESS"):
         raise RuntimeError(f"metadata import -> {status}: {str(response)[:800]}")
+
+
+def server_rejects(fx: Fixture, condition: str) -> bool:
+    """Ask the server whether it rejects a condition in the fixture program."""
+    status, body = api(
+        "POST",
+        f"programRules/condition/description?programId={fx.program_id}",
+        condition.encode(),
+        "text/plain",
+    )
+    return status in (200, 409) and (body or {}).get("status") == "ERROR"
 
 
 def _build_used(fx: Fixture, uids: list[str], payload: dict) -> None:
@@ -193,6 +207,10 @@ def seed() -> Fixture:
     )
     state.add("programRules", fx.rule_ids)
     _import(payload)
+    for style, (condition, _, _) in REFERENCE_STYLES.items():
+        name = fx.used[style][1]
+        if server_rejects(fx, condition.format(v=name)):
+            fx.rejected_styles.append(style)
     return fx
 
 
