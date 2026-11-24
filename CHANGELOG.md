@@ -2,9 +2,68 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.1] - 2026-09-30
+## [1.1.0]
+
+### Upgrading
+
+- If you installed 1.0.0 or earlier, which used the app key `tool-pr-validator`:
+  install this version, then uninstall the old **Program Rule Validator Tool** app
+  in the App Management app, or two entries remain in the app menu.
+- Add the new app to every user role that gave access to the old one. Until then,
+  users without the ALL authority cannot open it. The release notes of 1.0.1 left
+  this step out.
+- Bookmarks to the old app URL stop working.
+
+### Added
+
+- The delete confirmation lists the variables, and offers a backup: the
+  selected variables as a metadata file that the Import/Export app can import.
+- Before deleting, the tool reads the program's rules again, and does not
+  delete a variable that a rule uses now.
+- User documentation in `docs/user/`, for docs.dhis2.org. It replaces `MANUAL.md`.
+- The end-to-end suite follows the `e2e/run.sh` contract of
+  reference-tool-conventions, and checks every way a rule can reference a
+  variable.
 
 ### Changed
+
+- Deleting is only possible from the results of the last run, not from earlier
+  results kept on screen after a cancelled or failed run.
+- A failed delete shows the server's reason, such as a missing authority.
+- The **Edit** control is a link, so it can be opened from the context menu.
+- A filter and ticked rows survive switching tabs.
+- The app shows "HISP Centre - University of Oslo" as its author, and uses the
+  shared 96 x 96 tool icon.
+- Updated `@dhis2/ui`, `@dhis2/app-runtime` and `@dhis2/cli-app-scripts`;
+  TypeScript `strict` is on.
+- CI and release workflows match the reference-tool-conventions templates.
+
+### Removed
+
+- `react-router-dom`: the app has one page.
+- Working notes and earlier review logs under `review/` and `docs/`.
+
+### Fixed
+
+- Variables referenced by quoted name in `d2:count`, `d2:countIfValue`,
+  `d2:countIfZeroPos`, `d2:maxValue`, `d2:minValue` or `d2:lastEventDate`,
+  or inside the string argument of `d2:condition`, were listed as unused
+  and offered for deletion. On a large demo database, more than half of
+  the listed variables were in use.
+- DHIS2 error responses (401, 400, 403, 500) were listed as invalid
+  expressions, because their body also says `"status": "ERROR"`. The
+  1.0.0 fix for this covered only error pages without a JSON body.
+  Only HTTP 200 and 409 now count as a verdict.
+- An expired session stops the run with a message, instead of listing
+  every remaining rule as invalid.
+- After a delete, a warning or error replaced the success message.
+  Both now show in one message.
+- Clicking **Delete** twice sent the same delete twice.
+- Variable names with `&` or `<` were escaped twice in checkbox labels.
+
+## [1.0.1] - 2026-09-30
+
+### Upgrading
 
 - The app key is now `tool-program-rule-validator`, matching the repository name.
   Earlier versions, including 1.0.0, were installed under `tool-pr-validator`, so DHIS2
@@ -26,28 +85,6 @@ All notable changes to this project will be documented in this file.
 - Unused program rule variables link out for editing too; previously
   only invalid expressions did. The link button is labelled "Edit", with
   the app it opens named in its tooltip.
-
-### Fixed
-
-- Transient server failures are no longer reported as invalid expressions.
-  A 5xx, a rate-limit response or a dropped connection used to produce a
-  generic "Condition validation error" row, indistinguishable from a real
-  problem with the rule. Such requests are now retried with a short
-  backoff, and anything still unanswered is counted and surfaced as a
-  run-level warning instead of being listed as invalid.
-- The expression-description requests now send the `X-Requested-With` and
-  `Accept` headers that the data engine sends on every other request, so
-  an expired session can no longer trigger the browser's native
-  basic-auth dialog.
-- The expression-description requests now use the same API version as the
-  rest of the app (the engine defaults it to the server's own version)
-  rather than always hitting the unversioned `/api/` path.
-- Results from the last completed run stay on screen when a subsequent
-  run is cancelled or fails, instead of being discarded.
-- Selection checkboxes in the unused-variables table have accessible
-  names, and the link-out button shows that it opens a new tab.
-- The program pickers always offer a search box, matching the original
-  tool, rather than only above ten programs.
 
 ### Changed
 
@@ -82,6 +119,28 @@ All notable changes to this project will be documented in this file.
 - The Python Playwright scripts under `tests/playwright/` (written for
   the old DOM); functional testing is now done against the platform UI.
 
+### Fixed
+
+- Transient server failures are no longer reported as invalid expressions.
+  A 5xx, a rate-limit response or a dropped connection used to produce a
+  generic "Condition validation error" row, indistinguishable from a real
+  problem with the rule. Such requests are now retried with a short
+  backoff, and anything still unanswered is counted and surfaced as a
+  run-level warning instead of being listed as invalid.
+- The expression-description requests now send the `X-Requested-With` and
+  `Accept` headers that the data engine sends on every other request, so
+  an expired session can no longer trigger the browser's native
+  basic-auth dialog.
+- The expression-description requests now use the same API version as the
+  rest of the app (the engine defaults it to the server's own version)
+  rather than always hitting the unversioned `/api/` path.
+- Results from the last completed run stay on screen when a subsequent
+  run is cancelled or fails, instead of being discarded.
+- Selection checkboxes in the unused-variables table have accessible
+  names, and the link-out button shows that it opens a new tab.
+- The program pickers always offer a search box, matching the original
+  tool, rather than only above ten programs.
+
 ## [0.2.0] - 2026-04-28
 
 ### Added
@@ -109,6 +168,7 @@ All notable changes to this project will be documented in this file.
   NaN-safe.
 - All `M.toast` calls go through a small `escapeHtml` helper.
 - `setChoices` is called once per validation run instead of in a loop.
+- `.DS_Store` and `__pycache__/` added to `.gitignore`.
 
 ### Removed
 
@@ -128,7 +188,3 @@ All notable changes to this project will be documented in this file.
 - Duplicated comment in `d2api.js`'s `formatEndpoint`.
 - "Univeristy" typo in `package.json` (which `d2-manifest` reads when
   generating `manifest.webapp`).
-
-### Repo hygiene
-
-- `.DS_Store` and `__pycache__/` added to `.gitignore`.
