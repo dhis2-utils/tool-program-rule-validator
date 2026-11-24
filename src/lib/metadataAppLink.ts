@@ -8,7 +8,7 @@
  * The same app appears under two different names and at two different paths
  * depending on how it got there, so neither can be hardcoded:
  *
- *   bundled (2.42+)   menu name "dhis-web-metadata-management"
+ *   bundled (2.43+)   menu name "dhis-web-metadata-management"
  *                     at {base}/dhis-web-metadata-management/index.html
  *   App Hub install   menu name "metadata-management"
  *                     at {base}/api/apps/metadata-management/index.html

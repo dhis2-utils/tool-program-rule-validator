@@ -52,6 +52,9 @@ export const useValidation = () => {
     // failing a later run leaves the last completed run's results in place,
     // rather than forcing the user to validate everything again.
     const [results, setResults] = useState<ValidationResults | null>(null)
+    // Changes with every completed run, so views can reset their own state
+    // (filters, ticked rows) for new results but keep it across deletions.
+    const [runId, setRunId] = useState(0)
     const controllerRef = useRef<AbortController | null>(null)
 
     const cancel = useCallback(() => {
@@ -241,6 +244,7 @@ export const useValidation = () => {
                 setResults(
                     aggregateResults({ programs, programData, ruleResults })
                 )
+                setRunId((id) => id + 1)
                 setState({ status: 'done' })
             } catch (error) {
                 if (isSessionExpired(error)) {
@@ -273,5 +277,5 @@ export const useValidation = () => {
         [engine, processRule]
     )
 
-    return { state, results, start, cancel, removeUnusedVariables }
+    return { state, results, runId, start, cancel, removeUnusedVariables }
 }

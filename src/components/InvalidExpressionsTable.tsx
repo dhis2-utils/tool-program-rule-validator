@@ -8,7 +8,7 @@ import {
     DataTableRow,
 } from '@dhis2/ui'
 import React from 'react'
-import { EditInAppButton } from '@/components/EditInAppButton'
+import { EditInAppLink } from '@/components/EditInAppLink'
 import { useMetadataAppLink } from '@/hooks/useMetadataAppLink'
 import type { InvalidExpression } from '@/types'
 
@@ -62,7 +62,7 @@ export const InvalidExpressionsTable = ({
                             <DataTableCell>{row.message}</DataTableCell>
                             <DataTableCell>
                                 {!isLoading && (
-                                    <EditInAppButton
+                                    <EditInAppLink
                                         target={target}
                                         url={objectUrl(
                                             'programRule',

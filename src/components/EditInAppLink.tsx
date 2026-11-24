@@ -1,6 +1,7 @@
 import i18n from '@dhis2/d2-i18n'
-import { Button, IconLaunch16 } from '@dhis2/ui'
+import { IconLaunch16 } from '@dhis2/ui'
 import React from 'react'
+import styles from './EditInAppLink.module.css'
 import type { LinkTarget } from '@/lib/metadataAppLink'
 
 /**
@@ -8,10 +9,11 @@ import type { LinkTarget } from '@/lib/metadataAppLink'
  * when the user has neither editing app available, rather than offering a
  * link they cannot follow.
  *
- * The label stays short ("Edit") because the app names are too long for the
- * column; which app it opens is in the tooltip instead.
+ * A real link, styled as a small button, so it can be middle-clicked, copied
+ * and opened from the context menu. The label stays short ("Edit") because
+ * the app names are too long for the column; the title names the app.
  */
-export const EditInAppButton = ({
+export const EditInAppLink = ({
     url,
     target,
 }: {
@@ -23,18 +25,20 @@ export const EditInAppButton = ({
     }
 
     return (
-        <Button
-            small
-            // The icon and the title flag that this leaves the app for a new tab.
-            icon={<IconLaunch16 />}
+        <a
+            className={styles.link}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
             title={
                 target === 'metadata-management'
                     ? i18n.t('Edit in the Metadata Management app (new tab)')
                     : i18n.t('Edit in the Maintenance app (new tab)')
             }
-            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+            data-test="edit-in-app-link"
         >
+            <IconLaunch16 />
             {i18n.t('Edit')}
-        </Button>
+        </a>
     )
 }

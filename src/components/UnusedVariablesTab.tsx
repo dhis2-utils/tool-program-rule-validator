@@ -11,22 +11,81 @@ import {
     DataTableRow,
     MultiSelectField,
     MultiSelectOption,
+    NoticeBox,
 } from '@dhis2/ui'
 import React, { useMemo, useState } from 'react'
 import styles from './UnusedVariablesTab.module.css'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
-import { EditInAppButton } from '@/components/EditInAppButton'
-import { useDeleteVariables } from '@/hooks/useDeleteVariables'
+import { EditInAppLink } from '@/components/EditInAppLink'
+import {
+    type DeletionOutcome,
+    useDeleteVariables,
+} from '@/hooks/useDeleteVariables'
 import { useMetadataAppLink } from '@/hooks/useMetadataAppLink'
 import type { Program, UnusedVariable } from '@/types'
+
+type AlertKind = 'success' | 'warning' | 'critical'
+
+/** The alerts that report one delete run, in the order they are shown. */
+const outcomeMessages = ({
+    deletedIds,
+    failedIds,
+    nowUsedIds,
+    firstError,
+}: DeletionOutcome): { message: string; kind: AlertKind }[] => {
+    const messages: { message: string; kind: AlertKind }[] = []
+    if (deletedIds.length > 0) {
+        messages.push({
+            kind: 'success',
+            message:
+                deletedIds.length === 1
+                    ? i18n.t('Deleted 1 variable.')
+                    : i18n.t('Deleted {{total}} variables.', {
+                          total: deletedIds.length,
+                      }),
+        })
+    }
+    if (nowUsedIds.length > 0) {
+        messages.push({
+            kind: 'warning',
+            message:
+                nowUsedIds.length === 1
+                    ? i18n.t(
+                          '1 variable was not deleted, because a rule uses it now. Run the validation again.'
+                      )
+                    : i18n.t(
+                          '{{total}} variables were not deleted, because a rule uses them now. Run the validation again.',
+                          { total: nowUsedIds.length }
+                      ),
+        })
+    }
+    if (failedIds.length > 0 || (deletedIds.length === 0 && firstError)) {
+        const summary =
+            failedIds.length === 0
+                ? i18n.t('Nothing was deleted.')
+                : failedIds.length === 1
+                  ? i18n.t('Failed to delete 1 variable.')
+                  : i18n.t('Failed to delete {{total}} variables.', {
+                        total: failedIds.length,
+                    })
+        messages.push({
+            kind: 'critical',
+            message: firstError ? `${summary} ${firstError}` : summary,
+        })
+    }
+    return messages
+}
 
 export const UnusedVariablesTab = ({
     variables,
     programs,
+    canDelete,
     onDeleted,
 }: {
     variables: UnusedVariable[]
     programs: Program[]
+    /** False when the results are from an earlier run than the last one. */
+    canDelete: boolean
     onDeleted: (variableIds: string[]) => void
 }) => {
     const [filterProgramIds, setFilterProgramIds] = useState<string[]>([])
@@ -39,8 +98,10 @@ export const UnusedVariablesTab = ({
     } = useMetadataAppLink()
 
     const { show: showAlert } = useAlert(
-        ({ message }) => message,
-        ({ isError }) => (isError ? { critical: true } : { success: true })
+        ({ message }: { message: string; kind: AlertKind }) => message,
+        ({ kind }: { message: string; kind: AlertKind }) => ({
+            [kind]: true,
+        })
     )
 
     const filteredVariables = useMemo(
@@ -53,36 +114,20 @@ export const UnusedVariablesTab = ({
         [variables, filterProgramIds]
     )
 
+    const selectedVariables = useMemo(
+        () => variables.filter((v) => selectedIds.has(v.variableId)),
+        [variables, selectedIds]
+    )
+
     const { deleteVariables, isDeleting } = useDeleteVariables({
-        onSettled: ({ deletedIds, failedIds }) => {
-            if (deletedIds.length > 0) {
-                showAlert({
-                    message:
-                        deletedIds.length === 1
-                            ? i18n.t('Deleted 1 variable.')
-                            : i18n.t('Deleted {{total}} variables.', {
-                                  total: deletedIds.length,
-                              }),
-                    isError: false,
-                })
-            }
-            if (failedIds.length > 0) {
-                showAlert({
-                    message:
-                        failedIds.length === 1
-                            ? i18n.t('Failed to delete 1 variable.')
-                            : i18n.t('Failed to delete {{total}} variables.', {
-                                  total: failedIds.length,
-                              }),
-                    isError: true,
-                })
-            }
+        onSettled: (outcome) => {
+            outcomeMessages(outcome).forEach(showAlert)
             setSelectedIds((current) => {
                 const next = new Set(current)
-                deletedIds.forEach((id) => next.delete(id))
+                outcome.deletedIds.forEach((id) => next.delete(id))
                 return next
             })
-            onDeleted(deletedIds)
+            onDeleted(outcome.deletedIds)
             setShowConfirmModal(false)
         },
     })
@@ -143,6 +188,19 @@ export const UnusedVariablesTab = ({
 
     return (
         <div>
+            {!canDelete && variables.length > 0 && (
+                <div className={styles.notice}>
+                    <NoticeBox
+                        title={i18n.t('Run the validation again to delete')}
+                        dataTest="unused-variables-stale-notice"
+                    >
+                        {i18n.t(
+                            'These results are from an earlier run. Variables can only be deleted from the results of the last run.'
+                        )}
+                    </NoticeBox>
+                </div>
+            )}
+
             <div className={styles.filterRow}>
                 <MultiSelectField
                     label={i18n.t('Filter by program')}
@@ -173,7 +231,9 @@ export const UnusedVariablesTab = ({
                                 checked={allSelected}
                                 indeterminate={someSelected}
                                 onChange={({ checked }) => toggleAll(checked)}
-                                disabled={filteredVariables.length === 0}
+                                disabled={
+                                    !canDelete || filteredVariables.length === 0
+                                }
                                 label={
                                     <span className={styles.visuallyHidden}>
                                         {i18n.t(
@@ -215,6 +275,7 @@ export const UnusedVariablesTab = ({
                                         checked={selectedIds.has(
                                             variable.variableId
                                         )}
+                                        disabled={!canDelete}
                                         onChange={({ checked }) =>
                                             toggleVariable(
                                                 variable.variableId,
@@ -229,6 +290,10 @@ export const UnusedVariablesTab = ({
                                             >
                                                 {i18n.t('Select {{name}}', {
                                                     name: variable.variableName,
+                                                    // React escapes it already.
+                                                    interpolation: {
+                                                        escapeValue: false,
+                                                    },
                                                 })}
                                             </span>
                                         }
@@ -246,7 +311,7 @@ export const UnusedVariablesTab = ({
                                 </DataTableCell>
                                 <DataTableCell>
                                     {!linkLoading && (
-                                        <EditInAppButton
+                                        <EditInAppLink
                                             target={linkTarget}
                                             url={objectUrl(
                                                 'programRuleVariable',
@@ -264,7 +329,9 @@ export const UnusedVariablesTab = ({
             <div className={styles.deleteRow}>
                 <Button
                     destructive
-                    disabled={selectedIds.size === 0 || isDeleting}
+                    disabled={
+                        !canDelete || selectedIds.size === 0 || isDeleting
+                    }
                     onClick={() => setShowConfirmModal(true)}
                     dataTest="delete-selected-button"
                 >
@@ -274,10 +341,10 @@ export const UnusedVariablesTab = ({
 
             {showConfirmModal && (
                 <DeleteConfirmModal
-                    count={selectedIds.size}
+                    variables={selectedVariables}
                     isDeleting={isDeleting}
                     onCancel={() => setShowConfirmModal(false)}
-                    onConfirm={() => deleteVariables([...selectedIds])}
+                    onConfirm={() => deleteVariables(selectedVariables)}
                 />
             )}
         </div>

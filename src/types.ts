@@ -33,6 +33,9 @@ export type UnusedVariable = {
     programId: string
     programName: string
     variableId: string
+    /** The name rules reference the variable by. */
+    name: string
+    /** The name to show: the display name, or the name if there is none. */
     variableName: string
 }
 

@@ -1,0 +1,13 @@
+.list {
+    margin: 0 0 var(--spacers-dp8) 0;
+    padding-inline-start: var(--spacers-dp16);
+}
+
+.program {
+    color: var(--colors-grey700);
+}
+
+.more {
+    margin: 0 0 var(--spacers-dp12) 0;
+    color: var(--colors-grey700);
+}

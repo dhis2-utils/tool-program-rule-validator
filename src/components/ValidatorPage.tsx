@@ -21,7 +21,7 @@ type TabKey = 'conditions' | 'actions' | 'unused'
 
 export const ValidatorPage = () => {
     const { programs, isLoading, error } = usePrograms()
-    const { state, results, start, cancel, removeUnusedVariables } =
+    const { state, results, runId, start, cancel, removeUnusedVariables } =
         useValidation()
     const [selectedProgramIds, setSelectedProgramIds] = useState<string[]>([])
     const [activeTab, setActiveTab] = useState<TabKey>('conditions')
@@ -163,10 +163,14 @@ export const ValidatorPage = () => {
                         )}
                         dataTest="unvalidated-expressions-warning"
                     >
-                        {i18n.t(
-                            '{{total}} expression(s) could not be checked because the server did not answer. They are not listed as invalid — run the validation again to check them.',
-                            { total: results.unvalidatedExpressions }
-                        )}
+                        {results.unvalidatedExpressions === 1
+                            ? i18n.t(
+                                  '1 expression could not be checked because the server did not answer. It is not listed as invalid. Run the validation again to check it.'
+                              )
+                            : i18n.t(
+                                  '{{total}} expressions could not be checked because the server did not answer. They are not listed as invalid. Run the validation again to check them.',
+                                  { total: results.unvalidatedExpressions }
+                              )}
                     </NoticeBox>
                 </div>
             )}
@@ -197,13 +201,18 @@ export const ValidatorPage = () => {
                             onClick={() => setActiveTab('unused')}
                             dataTest="tab-unused-variables"
                         >
-                            {i18n.t('Unused program variables ({{total}})', {
-                                total: results.unusedVariables.length,
-                            })}
+                            {i18n.t(
+                                'Unused program rule variables ({{total}})',
+                                {
+                                    total: results.unusedVariables.length,
+                                }
+                            )}
                         </Tab>
                     </TabBar>
-                    <div className={styles.tabContent}>
-                        {activeTab === 'conditions' && (
+                    {/* All tabs stay mounted, so a filter or ticked rows
+                        survive switching tabs; a new run resets them. */}
+                    <div className={styles.tabContent} key={runId}>
+                        <div hidden={activeTab !== 'conditions'}>
                             <InvalidExpressionsTable
                                 rows={results.invalidConditions}
                                 messageHeader={i18n.t(
@@ -214,8 +223,8 @@ export const ValidatorPage = () => {
                                 )}
                                 dataTest="invalid-conditions-table"
                             />
-                        )}
-                        {activeTab === 'actions' && (
+                        </div>
+                        <div hidden={activeTab !== 'actions'}>
                             <InvalidExpressionsTable
                                 rows={results.invalidActions}
                                 messageHeader={i18n.t(
@@ -226,14 +235,15 @@ export const ValidatorPage = () => {
                                 )}
                                 dataTest="invalid-actions-table"
                             />
-                        )}
-                        {activeTab === 'unused' && (
+                        </div>
+                        <div hidden={activeTab !== 'unused'}>
                             <UnusedVariablesTab
                                 variables={results.unusedVariables}
                                 programs={results.validatedPrograms}
+                                canDelete={!resultsAreStale}
                                 onDeleted={removeUnusedVariables}
                             />
-                        )}
+                        </div>
                     </div>
                 </div>
             )}
