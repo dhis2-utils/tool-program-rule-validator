@@ -26,7 +26,32 @@ import type { Program, UnusedVariable } from '@/types'
 
 type AlertKind = 'success' | 'warning' | 'critical'
 
-/** The alerts that report one delete run, in the order they are shown. */
+const SEVERITY: AlertKind[] = ['success', 'warning', 'critical']
+
+/**
+ * One alert for a delete run. A useAlert hook shows one alert at a time, so
+ * the parts are joined, and the alert takes the most severe part's kind.
+ */
+const outcomeAlert = (
+    outcome: DeletionOutcome
+): { message: string; kind: AlertKind } | null => {
+    const parts = outcomeMessages(outcome)
+    if (parts.length === 0) {
+        return null
+    }
+    return {
+        message: parts.map((part) => part.message).join(' '),
+        kind: parts.reduce<AlertKind>(
+            (worst, part) =>
+                SEVERITY.indexOf(part.kind) > SEVERITY.indexOf(worst)
+                    ? part.kind
+                    : worst,
+            'success'
+        ),
+    }
+}
+
+/** The parts of the report on one delete run, in the order they are read. */
 const outcomeMessages = ({
     deletedIds,
     failedIds,
@@ -121,7 +146,10 @@ export const UnusedVariablesTab = ({
 
     const { deleteVariables, isDeleting } = useDeleteVariables({
         onSettled: (outcome) => {
-            outcomeMessages(outcome).forEach(showAlert)
+            const alert = outcomeAlert(outcome)
+            if (alert) {
+                showAlert(alert)
+            }
             setSelectedIds((current) => {
                 const next = new Set(current)
                 outcome.deletedIds.forEach((id) => next.delete(id))

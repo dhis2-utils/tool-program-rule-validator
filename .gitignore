@@ -10,3 +10,4 @@ src/locales
 test-results
 playwright-report
 .pnpm-store
+e2e/results
