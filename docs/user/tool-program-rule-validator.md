@@ -6,7 +6,7 @@ The Program Rule Validator Tool checks the program rules in a DHIS2 instance. It
 
 ## Before you start { #tool-program-rule-validator-before-you-start }
 
-- The tool works with DHIS2 v40 and later.
+- The tool works with DHIS2 v41 and later.
 - To open the tool, you need a user role that gives access to the **Program Rule Validator Tool** app.
 - The tool checks only the programs that you can see.
 - To delete program rule variables, you need the **Manage program rule** authority (`F_PROGRAM_RULE_MANAGEMENT`).
@@ -29,8 +29,6 @@ The tool is not published on the App Hub.
 3. Click **Manual install**.
 4. Click **Upload an app to install**, and choose the `.zip` file.
 5. Give the users who need the tool a user role with access to the app.
-
-<!-- VERIFY IN APP: the App Management labels "Manual install" and "Upload an app to install" on v40 to v42 (checked on v43). -->
 
 If you installed version 1.0.0 or earlier, the old app has a different key. Uninstall the old **Program Rule Validator Tool** app in the **App Management** app. Then add the new app to the user roles that gave access to the old one.
 

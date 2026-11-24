@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Upgrading
 
+- Requires DHIS2 2.41 or later.
 - If you installed 1.0.0 or earlier, which used the app key `tool-pr-validator`:
   install this version, then uninstall the old **Program Rule Validator Tool** app
   in the App Management app, or two entries remain in the app menu.

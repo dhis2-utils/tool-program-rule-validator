@@ -13,7 +13,7 @@ The rest of this README is for developers. The tool is a [DHIS2 App Platform](ht
 
 ## Supported DHIS2 versions
 
-DHIS2 v40 and later (`minDHIS2Version` in `d2.config.js`). The end-to-end suite runs against v40, v41, v42 and v43.
+DHIS2 v41 and later (`minDHIS2Version` in `d2.config.js`), the DHIS2 versions that are still supported. The end-to-end suite runs against v41, v42 and v43.
 
 ## Prerequisites
 

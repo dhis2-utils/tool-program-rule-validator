@@ -6,7 +6,7 @@ const config = {
     description:
         'Validates program rules and program rule variables, and finds invalid expressions and unused variables.',
     author: { name: 'HISP Centre - University of Oslo' },
-    minDHIS2Version: '2.40',
+    minDHIS2Version: '2.41',
 
     entryPoints: {
         app: './src/App.tsx',

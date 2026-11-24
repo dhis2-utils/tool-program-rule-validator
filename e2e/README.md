@@ -28,7 +28,7 @@ It then checks that:
 
 ## Get a throwaway instance
 
-Start a local DHIS2 instance with a demo database, as described in [DHIS2 in Docker](https://developers.dhis2.org/docs/tutorials/dhis2-docker/). The suite runs on DHIS2 2.40 and later, with or without demo data.
+Start a local DHIS2 instance with a demo database, as described in [DHIS2 in Docker](https://developers.dhis2.org/docs/tutorials/dhis2-docker/). The suite runs on DHIS2 v41 and later, with or without demo data.
 
 ## Run the suite
 
