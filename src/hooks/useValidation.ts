@@ -76,11 +76,9 @@ export const useValidation = () => {
             let unvalidatedExpressions = 0
 
             if (rule.condition) {
-                collectUsedVariableNames(
-                    prvNames,
-                    [rule.condition],
-                    [rule.condition]
-                ).forEach((name) => usedVariableNames.add(name))
+                collectUsedVariableNames(prvNames, [rule.condition]).forEach(
+                    (name) => usedVariableNames.add(name)
+                )
                 const result = await describeExpression({
                     baseUrl,
                     apiVersion,
@@ -99,8 +97,8 @@ export const useValidation = () => {
 
             for (const action of rule.programRuleActions ?? []) {
                 const texts = [action.content || '', action.data || '']
-                collectUsedVariableNames(prvNames, texts, texts).forEach(
-                    (name) => usedVariableNames.add(name)
+                collectUsedVariableNames(prvNames, texts).forEach((name) =>
+                    usedVariableNames.add(name)
                 )
                 if (action.data) {
                     const result = await describeExpression({
