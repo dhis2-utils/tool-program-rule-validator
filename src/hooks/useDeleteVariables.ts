@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { idsReferencedByRules } from '@/lib/ruleTexts'
 import type { ProgramRule, UnusedVariable } from '@/types'
 
-export type DeletionOutcome = {
+export interface DeletionOutcome {
     deletedIds: string[]
     failedIds: string[]
     /** Variables a rule references now, although the results said unused. */
@@ -13,7 +13,9 @@ export type DeletionOutcome = {
     firstError?: string
 }
 
-type RulesResponse = { rules: { programRules: ProgramRule[] } }
+interface RulesResponse {
+    rules: { programRules: ProgramRule[] }
+}
 
 /** The message to show for a failed request, preferring the server's own. */
 const errorMessage = (error: unknown): string | undefined => {

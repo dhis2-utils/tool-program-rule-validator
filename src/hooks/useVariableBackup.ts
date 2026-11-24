@@ -5,7 +5,7 @@ import { downloadJson } from '@/lib/download'
 /** Ids per request, so the URL stays well under server limits. */
 const CHUNK_SIZE = 100
 
-type VariablesResponse = {
+interface VariablesResponse {
     variables: { programRuleVariables: Record<string, unknown>[] }
 }
 

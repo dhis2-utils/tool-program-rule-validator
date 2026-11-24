@@ -7,16 +7,15 @@ const jsonResponse = (
     ({
         ok: status >= 200 && status < 300,
         status,
-        json: async () => body,
+        json: () => Promise.resolve(body),
     }) as Response
 
 const nonJsonResponse = ({ status }: { status: number }): Response =>
     ({
         ok: status >= 200 && status < 300,
         status,
-        json: async () => {
-            throw new SyntaxError('Unexpected token < in JSON')
-        },
+        json: () =>
+            Promise.reject(new SyntaxError('Unexpected token < in JSON')),
     }) as unknown as Response
 
 const mockFetch = (fetchImpl: jest.Mock) => {
@@ -313,9 +312,9 @@ describe('describeExpression', () => {
     it('aborts while backing off between retries', async () => {
         const controller = new AbortController()
         const fetchMock = mockFetch(
-            jest.fn().mockImplementation(async () => {
+            jest.fn().mockImplementation(() => {
                 controller.abort()
-                return nonJsonResponse({ status: 503 })
+                return Promise.resolve(nonJsonResponse({ status: 503 }))
             })
         )
 

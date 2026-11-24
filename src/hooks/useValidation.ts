@@ -4,11 +4,8 @@ import pLimit from 'p-limit'
 import { useCallback, useRef, useState } from 'react'
 import { describeExpression } from '@/lib/expressionDescription'
 import { collectUsedVariableNames } from '@/lib/expressionUsage'
-import {
-    aggregateResults,
-    type ProgramData,
-    type RuleResult,
-} from '@/lib/validationResults'
+import { aggregateResults } from '@/lib/validationResults'
+import type { ProgramData, RuleResult } from '@/lib/validationResults'
 import type {
     Program,
     ProgramRule,
@@ -121,6 +118,7 @@ export const useValidation = () => {
                     usedVariableNames.add(name)
                 )
                 if (action.data) {
+                    // oxlint-disable-next-line no-await-in-loop -- one request per rule at a time; RULE_CONCURRENCY sets the parallelism
                     const result = await describeExpression({
                         baseUrl,
                         apiVersion,

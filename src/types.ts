@@ -1,27 +1,27 @@
-export type Program = {
+export interface Program {
     id: string
     displayName: string
 }
 
-export type ProgramRuleAction = {
+export interface ProgramRuleAction {
     data?: string
     content?: string
 }
 
-export type ProgramRule = {
+export interface ProgramRule {
     id: string
     displayName: string
     condition?: string
     programRuleActions?: ProgramRuleAction[]
 }
 
-export type ProgramRuleVariable = {
+export interface ProgramRuleVariable {
     id: string
     name: string
     displayName: string
 }
 
-export type InvalidExpression = {
+export interface InvalidExpression {
     programId: string
     programName: string
     ruleId: string
@@ -29,7 +29,7 @@ export type InvalidExpression = {
     message: string
 }
 
-export type UnusedVariable = {
+export interface UnusedVariable {
     programId: string
     programName: string
     variableId: string
@@ -39,7 +39,7 @@ export type UnusedVariable = {
     variableName: string
 }
 
-export type ValidationResults = {
+export interface ValidationResults {
     validatedPrograms: Program[]
     invalidConditions: InvalidExpression[]
     invalidActions: InvalidExpression[]

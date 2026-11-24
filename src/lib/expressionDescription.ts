@@ -62,11 +62,14 @@ const delay = (ms: number, signal?: AbortSignal): Promise<void> =>
             reject(abortError())
             return
         }
+        // The abort handler and the timer refer to each other, so the timer
+        // handle lives in an object that exists before both.
+        const pending: { timer?: ReturnType<typeof setTimeout> } = {}
         const onAbort = () => {
-            clearTimeout(timer)
+            clearTimeout(pending.timer)
             reject(abortError())
         }
-        const timer = setTimeout(() => {
+        pending.timer = setTimeout(() => {
             signal?.removeEventListener('abort', onAbort)
             resolve()
         }, ms)
@@ -167,12 +170,14 @@ export const describeExpression = async ({
     const url = apiUrl(baseUrl, path, apiVersion)
 
     for (let attempt = 0; ; attempt++) {
+        // oxlint-disable-next-line no-await-in-loop -- each retry depends on the previous attempt's result
         const result = await describeOnce({ url, expression, signal })
         if (result.status !== 'unavailable' || attempt >= retries) {
             return result
         }
         // Back off before retrying: an error under load is usually transient,
         // and retrying immediately would only add to the load that caused it.
+        // oxlint-disable-next-line no-await-in-loop -- the backoff must finish before the next attempt
         await delay(RETRY_BASE_DELAY_MS * 2 ** attempt, signal)
     }
 }

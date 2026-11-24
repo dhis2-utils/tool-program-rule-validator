@@ -46,10 +46,13 @@ pnpm start --proxy http://localhost:8080 --proxyPort 8081
 
 ```bash
 pnpm test                 # unit tests (Jest), next to the code in src/
-pnpm run lint             # ESLint and the Prettier check
+pnpm run lint             # Ultracite: Oxlint and the Oxfmt format check
+pnpm run format           # format with Oxfmt
 pnpm exec tsc --noEmit    # type check
 pnpm run build            # writes build/bundle/tool-program-rule-validator-<version>.zip
 ```
+
+Linting follows [LINTING.md](https://github.com/dhis2-utils/reference-tool-conventions/blob/main/LINTING.md) in reference-tool-conventions: Ultracite on Oxlint and Oxfmt, over the DHIS2 house style. `AGENTS.md` repeats the rules for coding agents.
 
 The end-to-end suite installs the built zip on a throwaway DHIS2 instance and drives it in a browser. See [e2e/README.md](e2e/README.md).
 

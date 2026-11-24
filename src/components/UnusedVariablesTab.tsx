@@ -17,39 +17,14 @@ import React, { useMemo, useState } from 'react'
 import styles from './UnusedVariablesTab.module.css'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 import { EditInAppLink } from '@/components/EditInAppLink'
-import {
-    type DeletionOutcome,
-    useDeleteVariables,
-} from '@/hooks/useDeleteVariables'
+import { useDeleteVariables } from '@/hooks/useDeleteVariables'
+import type { DeletionOutcome } from '@/hooks/useDeleteVariables'
 import { useMetadataAppLink } from '@/hooks/useMetadataAppLink'
 import type { Program, UnusedVariable } from '@/types'
 
 type AlertKind = 'success' | 'warning' | 'critical'
 
 const SEVERITY: AlertKind[] = ['success', 'warning', 'critical']
-
-/**
- * One alert for a delete run. A useAlert hook shows one alert at a time, so
- * the parts are joined, and the alert takes the most severe part's kind.
- */
-const outcomeAlert = (
-    outcome: DeletionOutcome
-): { message: string; kind: AlertKind } | null => {
-    const parts = outcomeMessages(outcome)
-    if (parts.length === 0) {
-        return null
-    }
-    return {
-        message: parts.map((part) => part.message).join(' '),
-        kind: parts.reduce<AlertKind>(
-            (worst, part) =>
-                SEVERITY.indexOf(part.kind) > SEVERITY.indexOf(worst)
-                    ? part.kind
-                    : worst,
-            'success'
-        ),
-    }
-}
 
 /** The parts of the report on one delete run, in the order they are read. */
 const outcomeMessages = ({
@@ -99,6 +74,26 @@ const outcomeMessages = ({
         })
     }
     return messages
+}
+
+/**
+ * One alert for a delete run. A useAlert hook shows one alert at a time, so
+ * the parts are joined, and the alert takes the most severe part's kind.
+ */
+const outcomeAlert = (
+    outcome: DeletionOutcome
+): { message: string; kind: AlertKind } | null => {
+    const parts = outcomeMessages(outcome)
+    if (parts.length === 0) {
+        return null
+    }
+    let kind: AlertKind = 'success'
+    for (const part of parts) {
+        if (SEVERITY.indexOf(part.kind) > SEVERITY.indexOf(kind)) {
+            kind = part.kind
+        }
+    }
+    return { message: parts.map((part) => part.message).join(' '), kind }
 }
 
 export const UnusedVariablesTab = ({

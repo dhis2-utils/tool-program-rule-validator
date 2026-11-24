@@ -1,7 +1,7 @@
 import type { Program } from '@/types'
 import { useApiDataQuery } from '@/utils/useApiDataQuery'
 
-type ProgramsResponse = {
+interface ProgramsResponse {
     programs: Program[]
 }
 
