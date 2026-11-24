@@ -5,8 +5,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"POT-Creation-Date: 2026-08-28T06:02:33.880Z\n"
-"PO-Revision-Date: 2026-08-28T06:02:33.882Z\n"
+"POT-Creation-Date: 2026-11-24T09:59:26.525Z\n"
+"PO-Revision-Date: 2026-11-24T09:59:26.525Z\n"
 
 msgid "Delete 1 unused variable?"
 msgstr "Delete 1 unused variable?"
@@ -158,6 +158,9 @@ msgstr "Condition validation error"
 
 msgid "Action expression validation error"
 msgstr "Action expression validation error"
+
+msgid "Your session has ended. Log in again, then run the validation again."
+msgstr "Your session has ended. Log in again, then run the validation again."
 
 msgctxt "Application title"
 msgid "__MANIFEST_APP_TITLE"
