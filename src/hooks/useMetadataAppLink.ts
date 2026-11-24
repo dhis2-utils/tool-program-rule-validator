@@ -1,8 +1,20 @@
 import { useConfig } from '@dhis2/app-runtime'
 import { useCallback } from 'react'
 import { metadataObjectUrl, pickLinkTarget } from '@/lib/metadataAppLink'
-import type { MenuModule, MetadataObjectType } from '@/lib/metadataAppLink'
+import type {
+    LinkTarget,
+    MenuModule,
+    MetadataObjectType,
+} from '@/lib/metadataAppLink'
 import { useApiDataQuery } from '@/utils/useApiDataQuery'
+
+/** Where to edit one object, and the app that the link opens. */
+export interface EditLink {
+    url: string
+    target: LinkTarget
+    /** The app's name from the menu, if the menu could be read. */
+    appName?: string
+}
 
 interface AppsMenuResponse {
     modules: MenuModule[]
@@ -33,21 +45,28 @@ export const useMetadataAppLink = () => {
         select: (data) => data.modules,
     })
 
-    const resolution = pickLinkTarget(modules)
-
-    const objectUrl = useCallback(
-        (objectType: MetadataObjectType, id: string): string | null =>
-            resolution
-                ? metadataObjectUrl({
-                      target: resolution.target,
-                      launchUrl: resolution.launchUrl,
-                      baseUrl,
-                      objectType,
-                      id,
-                  })
-                : null,
-        [resolution, baseUrl]
+    /** Where to edit one object: the URL and the app it opens, or null. */
+    const editLink = useCallback(
+        (objectType: MetadataObjectType, id: string): EditLink | null => {
+            const resolution = pickLinkTarget(modules, objectType)
+            if (!resolution) {
+                return null
+            }
+            return {
+                target: resolution.target,
+                appName: resolution.appName,
+                url: metadataObjectUrl({
+                    target: resolution.target,
+                    launchUrl: resolution.launchUrl,
+                    fallbackPath: resolution.fallbackPath,
+                    baseUrl,
+                    objectType,
+                    id,
+                }),
+            }
+        },
+        [modules, baseUrl]
     )
 
-    return { target: resolution?.target ?? null, objectUrl, isLoading }
+    return { editLink, isLoading }
 }

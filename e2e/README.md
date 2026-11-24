@@ -21,7 +21,7 @@ It then checks that:
 - ticked rows survive switching tabs;
 - the delete confirmation lists the variables, and the backup download holds them;
 - the app deletes an unused variable, and does not delete one that a rule started to use after the run;
-- the Edit link opens the variable in Metadata Management or Maintenance;
+- the **Edit** links of a rule and of a variable open the app that `apps/menu` calls for: Metadata Management when its version can edit that object type, otherwise Maintenance, and the object opens there;
 - a run can be cancelled, and deleting is blocked on results from an earlier run;
 - an expired session stops the run instead of listing rules as invalid;
 - the page logs no unexpected HTTP errors or page errors.

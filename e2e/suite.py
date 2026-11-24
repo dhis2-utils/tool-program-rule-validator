@@ -294,40 +294,110 @@ def step_delete(run: Run, b: Browser, fx: fixtures.Fixture) -> None:
     )
 
 
-def step_edit_link(run: Run, b: Browser, fx: fixtures.Fixture) -> None:
-    link = unused_row(b, fx.unused_recheck[1]).locator(EDIT_LINK)
+# Metadata Management menu names, newest first, and the first version with
+# an edit screen per object type (see src/lib/metadataAppLink.ts).
+METADATA_MANAGEMENT_MODULES = [
+    "dhis-web-metadata-management",
+    "metadata-management",
+    "maintenance-preview",
+]
+MIN_VERSION = {"programRule": (0, 135, 0), "programRuleVariable": (0, 119, 0)}
+
+
+def _version(text: str) -> tuple[int, ...]:
+    parts = text.split("-")[0].split(".")
+    return tuple(int(p) if p.isdigit() else 0 for p in parts)
+
+
+def expected_app(object_type: str) -> str | None:
+    """The menu name of the app a link should open, by the documented rule."""
+    _, menu = api("GET", "apps/menu")
+    modules = {m["name"]: m for m in (menu or {}).get("modules", [])}
+    for name in METADATA_MANAGEMENT_MODULES:
+        module = modules.get(name)
+        if module and (
+            not module.get("version")
+            or _version(module["version"]) >= MIN_VERSION[object_type]
+        ):
+            return name
+    return "dhis-web-maintenance" if "dhis-web-maintenance" in modules else None
+
+
+def _page_shows(page: Page, text: str) -> bool:
+    """Wait up to a minute for any frame to show `text`, in text or a field."""
+    for _ in range(60):
+        for frame in page.frames:
+            try:
+                if frame.evaluate(
+                    "n => [...document.querySelectorAll('input')]"
+                    ".some(i => i.value === n) || document.body.innerText.includes(n)",
+                    text,
+                ):
+                    return True
+            except Exception:  # noqa: BLE001 - frames come and go while loading
+                continue
+        page.wait_for_timeout(1000)
+    return False
+
+
+def _check_edit_link(run: Run, b: Browser, case: dict) -> None:
+    test_id = f"edit-link-{case['type']}"
+    expected = expected_app(case["type"])
+    link = case["row"].locator(EDIT_LINK)
+    if expected is None:
+        run.record(test_id, link.count() == 0, "no editing app: no link expected")
+        return
     if link.count() == 0:
-        run.record("edit-link-opens-object", False, "no Edit link")
+        run.record(test_id, False, f"no Edit link; expected {expected}")
         return
     href = link.get_attribute("href") or ""
+    title = link.get_attribute("title") or ""
     page = b.page.context.new_page()
     try:
         page.goto(href, wait_until="domcontentloaded")
-        name = fx.unused_recheck[1]
-        found = False
-        for _ in range(60):
-            for frame in page.frames:
-                try:
-                    found = frame.evaluate(
-                        "n => [...document.querySelectorAll('input')]"
-                        ".some(i => i.value === n) || document.body.innerText.includes(n)",
-                        name,
-                    )
-                except Exception:  # noqa: BLE001 - frames come and go while loading
-                    continue
-                if found:
-                    break
-            if found:
-                break
-            page.wait_for_timeout(1000)
-        page.screenshot(path=os.path.join(RESULTS_DIR, f"{run.label}-05-edit-link.png"))
-        run.record(
-            "edit-link-opens-object",
-            found and fx.unused_recheck[0] in href,
-            href.replace(BASE, ""),
+        opened = _page_shows(page, case["name"])
+        page.screenshot(
+            path=os.path.join(RESULTS_DIR, f"{run.label}-05-edit-{case['type']}.png")
         )
     finally:
         page.close()
+    right_app = f"/{expected}/" in href
+    run.record(
+        test_id,
+        right_app and opened and case["id"] in href,
+        f"expected {expected}; href={href.replace(BASE, '')}; opened={opened}; "
+        f"title={title!r}",
+    )
+
+
+def step_edit_link(run: Run, b: Browser, fx: fixtures.Fixture) -> None:
+    app = b.app
+    app.locator(TAB_CONDITIONS).click()
+    rule_row = app.locator(f"{CONDITIONS_TABLE} tbody tr").filter(
+        has_text="invalid condition"
+    )
+    rule_name = rule_row.locator("td").nth(1).inner_text()
+    _check_edit_link(
+        run,
+        b,
+        {
+            "type": "programRule",
+            "row": rule_row,
+            "name": rule_name,
+            "id": fx.rule_invalid_condition,
+        },
+    )
+    app.locator(TAB_UNUSED).click()
+    _check_edit_link(
+        run,
+        b,
+        {
+            "type": "programRuleVariable",
+            "row": unused_row(b, fx.unused_recheck[1]),
+            "name": fx.unused_recheck[1],
+            "id": fx.unused_recheck[0],
+        },
+    )
 
 
 def step_cancel_and_stale(run: Run, b: Browser) -> None:

@@ -23,7 +23,7 @@ export const InvalidExpressionsTable = ({
     emptyMessage: string
     dataTest: string
 }) => {
-    const { target, objectUrl, isLoading } = useMetadataAppLink()
+    const { editLink, isLoading } = useMetadataAppLink()
 
     return (
         <DataTable dataTest={dataTest}>
@@ -63,8 +63,7 @@ export const InvalidExpressionsTable = ({
                             <DataTableCell>
                                 {!isLoading && (
                                     <EditInAppLink
-                                        target={target}
-                                        url={objectUrl(
+                                        link={editLink(
                                             'programRule',
                                             row.ruleId
                                         )}

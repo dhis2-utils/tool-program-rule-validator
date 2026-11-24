@@ -31,6 +31,11 @@ All notable changes to this project will be documented in this file.
   results kept on screen after a cancelled or failed run.
 - A failed delete shows the server's reason, such as a missing authority.
 - The **Edit** control is a link, so it can be opened from the context menu.
+- **Edit** opens Metadata Management only when its version has an edit
+  screen for the object (program rule variables from 0.119.0, program rules
+  from 0.135.0), and Maintenance otherwise. It also recognises Metadata
+  Management installed under its earlier key, `maintenance-preview`. The
+  tooltip names the app as the app menu shows it.
 - A filter and ticked rows survive switching tabs.
 - The app shows "HISP Centre - University of Oslo" as its author, and uses the
   shared 96 x 96 tool icon.

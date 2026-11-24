@@ -111,11 +111,7 @@ export const UnusedVariablesTab = ({
     const [filterProgramIds, setFilterProgramIds] = useState<string[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [showConfirmModal, setShowConfirmModal] = useState(false)
-    const {
-        target: linkTarget,
-        objectUrl,
-        isLoading: linkLoading,
-    } = useMetadataAppLink()
+    const { editLink, isLoading: linkLoading } = useMetadataAppLink()
 
     const { show: showAlert } = useAlert(
         ({ message }: { message: string; kind: AlertKind }) => message,
@@ -335,8 +331,7 @@ export const UnusedVariablesTab = ({
                                 <DataTableCell>
                                     {!linkLoading && (
                                         <EditInAppLink
-                                            target={linkTarget}
-                                            url={objectUrl(
+                                            link={editLink(
                                                 'programRuleVariable',
                                                 variable.variableId
                                             )}

@@ -64,7 +64,12 @@ If you cancel a run, or a run fails, the results of the last complete run stay o
 
 ## Edit a rule or a variable { #tool-program-rule-validator-edit }
 
-Each row has an **Edit** link. The link opens the rule or the variable in a new tab, in the **Metadata Management** app if you have it, or else in the **Maintenance** app. The tooltip of the link says which app it opens. If you have neither app, the row has no link.
+Each row has an **Edit** link. The link opens the rule or the variable in a new tab:
+
+- in the **Metadata Management** app, if you can open it and its version has an edit screen for that type of object;
+- otherwise, in the **Maintenance** app.
+
+The **Metadata Management** app can edit program rule variables from version 0.119.0, and program rules from version 0.135.0. Before version 0.147.0, the app was called **Maintenance (Preview)**. The tooltip of the link names the app that it opens. If you can open neither app, the row has no link.
 
 ## Delete unused variables { #tool-program-rule-validator-delete }
 
