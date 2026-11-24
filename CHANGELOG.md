@@ -6,13 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Upgrading
 
+- Earlier releases are withdrawn. They could list variables that rules use
+  as unused, and delete them (see Fixed). Upgrade any instance that runs an
+  earlier version. The tool cannot restore deleted variables; if you deleted
+  variables with an earlier version, check the rules of those programs.
 - Requires DHIS2 2.41 or later.
 - If you installed 1.0.0 or earlier, which used the app key `tool-pr-validator`:
   install this version, then uninstall the old **Program Rule Validator Tool** app
   in the App Management app, or two entries remain in the app menu.
 - Add the new app to every user role that gave access to the old one. Until then,
-  users without the ALL authority cannot open it. The release notes of 1.0.1 left
-  this step out.
+  users without the ALL authority cannot open it.
 - Bookmarks to the old app URL stop working.
 
 ### Added
