@@ -18,11 +18,13 @@ export type DescribeResult =
     | { status: 'invalid'; message: string }
     /**
      * The expression could not be validated at all: the request failed, or the
-     * server answered with an error carrying no validation verdict (5xx, 429,
-     * a proxy error page, an expired session). Kept distinct from `invalid` so
-     * a transient failure is never reported to the user as a broken rule.
+     * server answered with anything other than a verdict (5xx, 429, 400, a
+     * proxy error page). Kept distinct from `invalid` so a server problem is
+     * never reported to the user as a broken rule.
      */
     | { status: 'unavailable' }
+    /** The session has ended (HTTP 401). Retrying cannot help. */
+    | { status: 'unauthorized' }
 
 /** Retries per expression for `unavailable` outcomes, on top of the first try. */
 const RETRY_ATTEMPTS = 2
@@ -104,6 +106,17 @@ const describeOnce = async ({
         return { status: 'unavailable' }
     }
 
+    if (response.status === 401) {
+        return { status: 'unauthorized' }
+    }
+    // A verdict comes as HTTP 200 (conditions, and valid action expressions)
+    // or HTTP 409 (invalid action expressions). Anything else is not a verdict
+    // on the expression, even when its body says `status: ERROR`: DHIS2 puts
+    // that in every error it returns itself (400, 403, 500 and so on).
+    if (response.status !== 200 && response.status !== 409) {
+        return { status: 'unavailable' }
+    }
+
     let data: {
         status?: string
         description?: string
@@ -112,23 +125,20 @@ const describeOnce = async ({
     try {
         data = await response.json()
     } catch {
-        // Not JSON (an error page, an empty body) — handled by the checks below
+        // Not JSON, such as a login page served with HTTP 200 by an old
+        // server or a proxy: no verdict.
     }
 
-    // DHIS2 reports a genuinely invalid expression with a `status: ERROR` body:
-    // HTTP 200 for conditions, HTTP 409 for action data expressions. Any other
-    // non-OK response is a transport or server failure, not a verdict on the
-    // expression, and must not be rendered as an invalid-expression row.
     if (data?.status === 'ERROR') {
         return {
             status: 'invalid',
             message: data.description || data.message || '',
         }
     }
-    if (!response.ok) {
-        return { status: 'unavailable' }
+    if (response.status === 200 && data?.status === 'OK') {
+        return { status: 'valid' }
     }
-    return { status: 'valid' }
+    return { status: 'unavailable' }
 }
 
 /**

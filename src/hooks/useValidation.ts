@@ -29,6 +29,21 @@ export type ValidationState =
 const isAbortError = (error: unknown): boolean =>
     error instanceof Error && error.name === 'AbortError'
 
+/** Thrown when the server answers 401: the run cannot continue. */
+class SessionExpiredError extends Error {
+    constructor() {
+        super('Session expired')
+        this.name = 'SessionExpiredError'
+    }
+}
+
+const isSessionExpired = (error: unknown): boolean =>
+    error instanceof SessionExpiredError ||
+    // The data engine reports a 401 as an access error with this message.
+    (error instanceof Error &&
+        (error as Error & { type?: string }).type === 'access' &&
+        error.message === 'Unauthorized')
+
 export const useValidation = () => {
     const engine = useDataEngine()
     const { baseUrl, apiVersion } = useConfig()
@@ -92,6 +107,8 @@ export const useValidation = () => {
                     )
                 } else if (result.status === 'unavailable') {
                     unvalidatedExpressions++
+                } else if (result.status === 'unauthorized') {
+                    throw new SessionExpiredError()
                 }
             }
 
@@ -115,6 +132,8 @@ export const useValidation = () => {
                         )
                     } else if (result.status === 'unavailable') {
                         unvalidatedExpressions++
+                    } else if (result.status === 'unauthorized') {
+                        throw new SessionExpiredError()
                     }
                 }
             }
@@ -224,6 +243,17 @@ export const useValidation = () => {
                 )
                 setState({ status: 'done' })
             } catch (error) {
+                if (isSessionExpired(error)) {
+                    // Stop the requests still queued or in flight.
+                    controller.abort()
+                    setState({
+                        status: 'error',
+                        message: i18n.t(
+                            'Your session has ended. Log in again, then run the validation again.'
+                        ),
+                    })
+                    return
+                }
                 if (isAbortError(error) || signal.aborted) {
                     setState({ status: 'cancelled' })
                     return

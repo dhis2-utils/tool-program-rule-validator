@@ -97,11 +97,15 @@ describe('describeExpression', () => {
 
     it('reports a valid expression', async () => {
         mockFetch(
-            jest
-                .fn()
-                .mockResolvedValue(
-                    jsonResponse({ status: 'OK', description: 'true' })
-                )
+            jest.fn().mockResolvedValue(
+                jsonResponse({
+                    httpStatus: 'OK',
+                    httpStatusCode: 200,
+                    status: 'OK',
+                    message: 'Valid',
+                    description: 'true',
+                })
+            )
         )
 
         await expect(describe_()).resolves.toEqual({ status: 'valid' })
@@ -163,8 +167,54 @@ describe('describeExpression', () => {
         })
     })
 
-    it('reports a 500 as unavailable rather than invalid', async () => {
+    it('reports a 500 from a proxy as unavailable rather than invalid', async () => {
         mockFetch(jest.fn().mockResolvedValue(nonJsonResponse({ status: 500 })))
+
+        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+    })
+
+    // The bodies below are what DHIS2 itself returns. Each carries
+    // `status: ERROR`, which must not be read as a verdict on the expression.
+    it('reports a DHIS2 500 as unavailable rather than invalid', async () => {
+        mockFetch(
+            jest.fn().mockResolvedValue(
+                jsonResponse(
+                    {
+                        httpStatus: 'Internal Server Error',
+                        httpStatusCode: 500,
+                        status: 'ERROR',
+                        message: 'Something went wrong',
+                    },
+                    { status: 500 }
+                )
+            )
+        )
+
+        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+    })
+
+    it('reports a DHIS2 400 as unavailable rather than invalid', async () => {
+        mockFetch(
+            jest.fn().mockResolvedValue(
+                jsonResponse(
+                    {
+                        httpStatus: 'Bad Request',
+                        httpStatusCode: 400,
+                        status: 'ERROR',
+                        message:
+                            'Program is specified but does not exist: xxxxxxxxxxx',
+                        errorCode: 'E1003',
+                    },
+                    { status: 400 }
+                )
+            )
+        )
+
+        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+    })
+
+    it('reports a non-JSON HTTP 200, such as a login page, as unavailable', async () => {
+        mockFetch(jest.fn().mockResolvedValue(nonJsonResponse({ status: 200 })))
 
         await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
     })
@@ -175,19 +225,25 @@ describe('describeExpression', () => {
         await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
     })
 
-    it('reports an expired session (401) as unavailable', async () => {
-        mockFetch(
-            jest
-                .fn()
-                .mockResolvedValue(
-                    jsonResponse(
-                        { httpStatus: 'Unauthorized', message: 'Unauthorized' },
-                        { status: 401 }
-                    )
+    it('reports an expired session (401) as unauthorized, without retrying', async () => {
+        const fetchMock = mockFetch(
+            jest.fn().mockResolvedValue(
+                jsonResponse(
+                    {
+                        httpStatus: 'Unauthorized',
+                        httpStatusCode: 401,
+                        status: 'ERROR',
+                        message: 'Unauthorized',
+                    },
+                    { status: 401 }
                 )
+            )
         )
 
-        await expect(describe_()).resolves.toEqual({ status: 'unavailable' })
+        await expect(describe_({ retries: 2 })).resolves.toEqual({
+            status: 'unauthorized',
+        })
+        expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
     it('reports a network failure as unavailable', async () => {
